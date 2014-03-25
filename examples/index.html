@@ -3,30 +3,63 @@
   <head>
     <meta charset="utf-8">
     <title>Skidder</title>
-    <link rel="stylesheet" href="./stylesheets/styles.css">
+    <link rel="stylesheet" href="../src/jquery.skidder.css">
+    <!-- <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"> -->
   </head>
   <body>
 
-    <div class="slideshow">
-      <div class="viewport">
-        <div class="wrapper"> 
-          <img src="./images/500x300_r.png">
-          <img src="./images/300x700_o.png">
-          <img src="./images/500x300_g.png">
-          <img src="./images/500x300_b.png">
-          <img src="./images/500x300_y.png">
-
-
+    <div class="slideshow" style="height: 0; overflow: hidden">
+      <div class="slide"><img src="./images/1000x400_b.png"></div>
+      <div class="slide"><img src="./images/300x500_p.png"></div>
+      <div class="slide"><img src="./images/500x300_y.png"></div>
+      <div class="slide"><img src="./images/300x500_p.png"></div>
+      <!-- <div class="slide"><img src="./images/500x100_y.png"></div> -->
+<!--       <div class="slide"><img src="./images/500x300_b.png"></div>
+      <div class="slide"><img src="./images/500x300_g.png"></div>
+      <div class="slide"><img src="./images/500x300_r.png"></div>
+      <div class="slide"><img src="./images/500x300_y.png"></div> -->
     </div>
 
+
+    <!-- <div class="slideshow">
+
+      <div class="slide" style="background: green;">Text 1</div>
+      <div class="slide" style="background: red;">Text 2</div>
+      <div class="slide" style="background: yellow;">Text 3</div>
+      <div class="slide" style="background: blue;">Text 4</div>
+
+    </div> -->
 
 
   </body>
 
-  <script src="../lib/jquery-1.10.2.min.js"></script>
-  <script src="../src/skidder.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <script src="./lib/imagesloaded.js"></script>
+  <script src="./lib/smartresize.js"></script>
+  <script src="../src/jquery.skidder.js"></script>
+  
   <script>
-    $('.slideshow').skidder();
+    $('.slideshow').each( function() {  
+      var $slideshow = $(this);
+      $slideshow.imagesLoaded( function() {
+        $('.slideshow').skidder({
+          slideClass    : '.slide',
+          scaleSlides   : true,
+          maxSlideWidth : 1300,
+          maxSlideHeight: 500,
+          leftaligned   : false,
+          cycle         : true,
+          paging        : true,
+          swiping       : true,
+          jumpback      : false,
+          speed         : 400
+        });
+      });
+    });
+    
+    $(window).smartresize(function(){
+      $('.slideshow').skidder('resize');
+    });
 
   </script>
 
