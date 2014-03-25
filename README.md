@@ -40,6 +40,8 @@ $('.slideshow').skidder('resize');
 You will want to debounce this to save some trees, e.g. with Paul Irish's [smartresize](http://www.paulirish.com/2009/throttled-smartresize-jquery-event-handler/)
 
 ###Options
+| Option          | Description   |
+| ------------- | ------------- |
 | slideClass      | Default: '.slide'     |
 | scaleImages     | Scale widest image to maxSlideWidth. Adjust slideshow height accordingly. Requires images! Default: false     |
 | maxSlideWidth   | Scale widest image to this width if scaleImages == true. Default: 800   |
