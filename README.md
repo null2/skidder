@@ -29,7 +29,7 @@ A jQuery slideshow pugin that supports centering, swiping and responsive scaling
 </script>
 ```
 
-Make sure that they are loaded before initialising the plug-in, or the slideshow might not get correctly sized. You can use [imagesloaded.js](https://github.com/desandro/imagesloaded) for this purpose - load and call like this:
+Make sure that images are loaded before initialising the plug-in, or the slideshow might not get sized correctly. You can use [imagesloaded.js](https://github.com/desandro/imagesloaded) for this purpose - load it, then call like this:
 
 ```js
 $('.slideshow').each( function() {  
@@ -39,7 +39,7 @@ $('.slideshow').each( function() {
   });
 });
 ```
-Sliding is disabled for slideshows with less than two images.
+Sliding contriols are disabled for slideshows with less than two images.
 
 ###Resizing
 ```js
@@ -65,7 +65,9 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 
 Default styles are included in jquery.skidder.css - change at will.
 
-##To Dos
+##To Do
+- test and debug leftalign / !cycle / jumpback options
+- adapt swipehandler to nocycle
 - use requestAnimationFrame
 - fold (optional) smartresize into skidder
 - ~~proper swiping~~
@@ -73,7 +75,6 @@ Default styles are included in jquery.skidder.css - change at will.
 - adapt speed to slide width
 - ~~don't initialise if <2 images~~
 - callback functions
-- adapt swipehandler to nocycle
 - autoplay
 
 ##Credits and license
