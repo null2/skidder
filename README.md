@@ -60,14 +60,19 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | cycle           | Set to false if you don't want your slideshow to wrap around (false = buggy!). _Default: true_    |
 | jumpback        | In non-cycling mode jumpback will display a 'return to first slide' arrow at the last slide. Default: false    |
 | speed           | Transition speed. _Default: 400_    |
+| autoplay        | _Default: false    |
+| interval        | Autoplay interval _Default: 4000    |
+
 
 ###Styling
 
 Default styles are included in jquery.skidder.css - change at will.
 
 ##To Do
-- test and debug leftalign / !cycle / jumpback options
+- test and debug leftalign (align to viewport or maxSlideWidth?)/ non-cycle (disable event handlers for first and last slide) / jumpback options
 - adapt swipehandler to nocycle
+- make click cancel autoplay
+- DRY click/swipe/autoplay events
 - use requestAnimationFrame
 - fold (optional) smartresize into skidder
 - ~~proper swiping~~
@@ -75,7 +80,7 @@ Default styles are included in jquery.skidder.css - change at will.
 - adapt speed to slide width
 - ~~don't initialise if <2 images~~
 - callback functions
-- autoplay
+
 
 ##Credits and license
 

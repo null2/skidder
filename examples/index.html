@@ -22,12 +22,12 @@
     </div>
 
 
-<!--     <div class="slideshow-nocycle" style="height: 0; overflow: hidden">
+    <div class="slideshow-nocycle" style="height: 0; overflow: hidden">
       <div class="slide"><img src="./images/1000x400_b.png"></div>
       <div class="slide"><img src="./images/300x500_p.png"></div>
       <div class="slide"><img src="./images/500x300_y.png"></div>
       <div class="slide"><img src="./images/300x500_p.png"></div>
-    </div> -->
+    </div>
 
 <!--     <div class="slideshow">
 
@@ -60,28 +60,32 @@
           paging        : true,
           swiping       : true,
           jumpback      : false,
-          speed         : 400
+          speed         : 400,
+          autoplay      : false,
+          interval      : 4000
         });
       });
     });
 
-    // $('.slideshow-nocycle').each( function() {  
-    //   var $slideshow = $(this);
-    //   $slideshow.imagesLoaded( function() {
-    //     $slideshow.skidder({
-    //       slideClass    : '.slide',
-    //       scaleSlides   : true,
-    //       maxSlideWidth : 1300,
-    //       maxSlideHeight: 500,
-    //       leftaligned   : true,
-    //       cycle         : false,
-    //       paging        : true,
-    //       swiping       : true,
-    //       jumpback      : false,
-    //       speed         : 400
-    //     });
-    //   });
-    // });
+    $('.slideshow-nocycle').each( function() {  
+      var $slideshow = $(this);
+      $slideshow.imagesLoaded( function() {
+        $slideshow.skidder({
+          slideClass    : '.slide',
+          scaleSlides   : true,
+          maxSlideWidth : 1300,
+          maxSlideHeight: 500,
+          leftaligned   : true,
+          cycle         : false,
+          paging        : true,
+          swiping       : true,
+          jumpback      : false,
+          speed         : 400,
+          autoplay      : false,
+          interval      : 4000
+        });
+      });
+    });
     
     $(window).smartresize(function(){
       $('.slideshow').skidder('resize');

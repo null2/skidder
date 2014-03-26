@@ -1,7 +1,7 @@
-/* Skidder - slideshow plugin
-//   Georg Lauteren for null2
-//   http://twitter.com/_gl03
-//   http://georg.null2.net */
+/* Skidder - a jQuery slideshow plugin
+ * Georg Lauteren for null2 - MIT
+ * http://twitter.com/_gl03
+ * http://georg.null2.net           */
 
 if ( typeof Object.create != 'function') {
   Object.create = function(obj) {
@@ -89,12 +89,10 @@ if ( typeof Object.create != 'function') {
       self.centerPosition();
       self.$viewport.css('opacity', 1);
 
-      // TODO: proper autoplay
-      // if (self.options.autoplay) {
-      //   setTimeout(function(){
-      //     self.scrollWrapper('next', 1);
-      //   },self.options.interval);
-      // }
+      if (self.options.autoplay) {
+        self.autoplaying = self.autoplay();
+      }
+      
 
     },
 
@@ -206,7 +204,7 @@ if ( typeof Object.create != 'function') {
       if (self.options.paging) {
         self.$pagerdots.on('click touchend', function(e){self.clickHandlerPaging(e)}); 
       }
-      if ("ontouchstart" in document.documentElement) {
+      if ("ontouchstart" in document.documentElement && self.options.swiping) {
         self.$touchwrapper.on('touchstart touchmove touchend', function(e){self.swipeHandler(e)});
       } else {
         self.$clickwrappers.on('click', function(e){self.clickHandlerLeftRight(e)});
@@ -327,8 +325,6 @@ if ( typeof Object.create != 'function') {
       var direction = (activeindex > jumpindex ? 'prev' : 'next');
       var $fromSlide = self.$slides.filter('.active');
       var $toSlide = self.$slides.eq(self.$slides.index($fromSlide)+jumpsize);
-      
-      // console.log('activeindex ' + activeindex + ' jumpindex ' + jumpindex + ' jumpsize ' + jumpsize );
 
       // update paging
       self.$pagerdots.removeClass('active').eq(jumpindex).addClass('active');
@@ -340,9 +336,38 @@ if ( typeof Object.create != 'function') {
       self.scrollWrapper(direction, jumpsize);
     },
 
+    autoplay: function() {
+      var self = this;
+
+      var $fromSlide = self.$slides.filter('.active');
+      var $toSlide = self.options.leftaligned && self.options.jumpback && self.$slides.eq(-1).hasClass('active') ? 
+          self.$slides.eq(0) : $fromSlide.next();
+
+      return window.setTimeout(function(){
+        
+        self.removeEventHandlers();
+
+        $fromSlide.addClass('disengage').removeClass('active');
+        $toSlide.addClass('active').removeClass('disengage');
+
+        //update paging
+        if (self.options.paging) {
+          var $activedot = self.$pagerdots.filter('.active');
+          self.$pagerdots.removeClass('active'); 
+          $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
+                 
+        } 
+
+        self.scrollWrapper('next', 1);
+
+      }, self.options.interval);
+    },
+
     scrollWrapper: function(direction, jumpsize, dragoffset) {
       var self = this;
       var touchoffset = dragoffset || 0;
+
+      window.clearTimeout(self.autoplaying);
 
       if (jumpsize != 0) {
         // rewrite with slideindex? -> could jump to 0 on resize
@@ -356,7 +381,7 @@ if ( typeof Object.create != 'function') {
           }
         // TODO: rewrite with jumpsize, ditch direction 
         } else if (self.options.leftaligned) {
-          xoffset = (direction == 'next' ? -$disengagingSlide.innerWidth() : self.$slides.filter('.active').innerWidth());
+          xoffset = (jumpsize > 0 ? -$disengagingSlide.innerWidth() : self.$slides.filter('.active').innerWidth());
         
         } else { //centered
           for (j = 0; j <= Math.abs(jumpsize); j++) {        
@@ -385,11 +410,11 @@ if ( typeof Object.create != 'function') {
         self.refreshImages();
       
         // reorder slides
-        if (direction == 'next' && self.options.cycle) {
+        if (jumpsize > 0 && self.options.cycle) {
           self.leftPosition += self.$slides.eq(0).innerWidth()
           self.$wrapper.css('left', self.leftPosition );
           self.$slides.eq(0).appendTo(self.$wrapper);
-        } else if (direction == 'prev' && self.options.cycle) {
+        } else if (jumpsize < 0 && self.options.cycle) {
           self.leftPosition -= self.$slides.eq(-1).innerWidth()
           self.$wrapper.css('left', self.leftPosition);
           self.$slides.eq(-1).prependTo(self.$wrapper);
@@ -403,6 +428,10 @@ if ( typeof Object.create != 'function') {
             self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
           }
         } 
+
+        if (self.options.autoplay) {
+          self.autoplaying = self.autoplay();
+        }
       });
 
       self.$slides.removeClass('disengage');
@@ -478,11 +507,11 @@ if ( typeof Object.create != 'function') {
     leftaligned   : false,
     cycle         : true,   
     jumpback      : false,
-    speed         : 400
-
+    speed         : 400,
+    autoplay      : false,
+    interval      : 4000
   };
 
-    // autoplay      : true,
-    // interval      : 1500
+   
 
 }(jQuery, window, document));
