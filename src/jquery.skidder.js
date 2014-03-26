@@ -444,7 +444,7 @@ if ( typeof Object.create != 'function') {
       // console.log('resize');
       var self = $(this).data('skidder');
 
-      if (self.options.scaleSlides) { ; 
+      if (self && self.options.length && self.options.scaleSlides) { // check self for IE8
         self.scaleSlides();
       }
       self.centerPosition();
