@@ -10,6 +10,7 @@
 .skidder-viewport .skidder-wrapper {
   width: 20000em;
   position: absolute;
+  z-index: 1;
 }
 
 /*SLIDES*/
@@ -48,6 +49,7 @@
 
 /*LEFT-RIGHT ICONS*/
 .skidder-viewport .skidder-clickwrapper .skidder-clickelement {
+  position: relative;
   height: 100%;
   width: 86px;
   z-index: 5;

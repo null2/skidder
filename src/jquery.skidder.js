@@ -1,4 +1,7 @@
-// Skidder - slideshow plugin
+/* Skidder - slideshow plugin
+//   Georg Lauteren for null2
+//   http://twitter.com/_gl03
+//   http://georg.null2.net */
 
 if ( typeof Object.create != 'function') {
   Object.create = function(obj) {
@@ -9,6 +12,20 @@ if ( typeof Object.create != 'function') {
 }
 
 (function($, window, document, undefined) {
+
+  function img(url) {
+    var i = new Image;
+    i.src = url;
+    return i;
+  }
+
+  if ('naturalWidth' in (new Image)) {
+    $.fn.naturalWidth  = function() { return this[0].naturalWidth; };
+    $.fn.naturalHeight = function() { return this[0].naturalHeight; };
+  } else {
+    $.fn.naturalWidth  = function() { return img(this[0].src).width; };
+    $.fn.naturalHeight = function() { return img(this[0].src).height; };
+  }
 
   var Skidder = {
 
@@ -67,9 +84,18 @@ if ( typeof Object.create != 'function') {
         });
         self.setSlideshowHeight(newMaxHeight);
       }
+
       self.preloadSlides();  
       self.centerPosition();
       self.$viewport.css('opacity', 1);
+
+      // TODO: proper autoplay
+      // if (self.options.autoplay) {
+      //   setTimeout(function(){
+      //     self.scrollWrapper('next', 1);
+      //   },self.options.interval);
+      // }
+
     },
 
     scaleSlides: function() {
@@ -83,9 +109,9 @@ if ( typeof Object.create != 'function') {
 
         self.$images.each(function() {
 
-          scalefactor = Math.min(1.0, maxWidth / this.naturalWidth); // if image wider than allowed...
+          scalefactor = Math.min(1.0, maxWidth / $(this).naturalWidth()); // if image wider than allowed...
 
-          maxHeight = Math.min( maxHeight, Math.ceil(this.naturalHeight * scalefactor));
+          maxHeight = Math.min( maxHeight, Math.ceil($(this).naturalHeight() * scalefactor));
 
           // console.log('maxHeight: ' + maxHeight);
         });
@@ -94,15 +120,15 @@ if ( typeof Object.create != 'function') {
 
         self.$images.each(function() { 
 
-          if (this.naturalHeight > maxHeight) {
+          if ($(this).naturalHeight() > maxHeight) {
             $(this).css({
-              width   : Math.ceil(this.naturalWidth * (maxHeight / this.naturalHeight )) + 2, // + 2 is lazy correction for rounding problem
+              width   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
               height  : maxHeight
             });
-          } else if (this.naturalWidth > maxWidth) {
+          } else if ($(this).naturalWidth() > maxWidth) {
             $(this).css({
               width   : maxWidth,
-              height  : Math.ceil(this.naturalHeight * (maxWidth / this.naturalWidth)) + 2 // + 2 is lazy correction for rounding problem
+              height  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
             });
           } else {
             $(this).css({
@@ -157,7 +183,7 @@ if ( typeof Object.create != 'function') {
 
         self.refreshSlides();
         self.refreshImages();
-      } else {
+      } else if ( self.$slides.length > 1 ){
         self.$clickwrappers.find('.skidder-prev').hide(0);
       }
 
@@ -376,10 +402,11 @@ if ( typeof Object.create != 'function') {
           } else {
             self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
           }
-        }
-        
+        } 
       });
+
       self.$slides.removeClass('disengage');
+
     },
 
     centerPosition: function() {  
@@ -397,7 +424,8 @@ if ( typeof Object.create != 'function') {
 
     setSlideshowHeight: function(newMaxHeight) {
       var self = this;
-      self.$elem.add(self.$viewport).add(self.$wrapper).css('height', newMaxHeight);
+      // note: skidder-clickelements don't need to be sized if it weren't for #%@&% IE8
+      self.$elem.add(self.$viewport).add(self.$wrapper).add(self.$viewport.find('.skidder-clickelement')).css('height', newMaxHeight);
     },
 
     refreshSlides: function() {
@@ -451,6 +479,10 @@ if ( typeof Object.create != 'function') {
     cycle         : true,   
     jumpback      : false,
     speed         : 400
+
   };
+
+    // autoplay      : true,
+    // interval      : 1500
 
 }(jQuery, window, document));

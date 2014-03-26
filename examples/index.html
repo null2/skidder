@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html debug="true">
   <head>
     <meta charset="utf-8">
     <title>Skidder</title>
     <link rel="stylesheet" href="../src/jquery.skidder.css">
+    <!-- <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js"></script> -->
     <!-- <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"> -->
   </head>
   <body>
@@ -21,7 +22,14 @@
     </div>
 
 
-    <!-- <div class="slideshow">
+<!--     <div class="slideshow-nocycle" style="height: 0; overflow: hidden">
+      <div class="slide"><img src="./images/1000x400_b.png"></div>
+      <div class="slide"><img src="./images/300x500_p.png"></div>
+      <div class="slide"><img src="./images/500x300_y.png"></div>
+      <div class="slide"><img src="./images/300x500_p.png"></div>
+    </div> -->
+
+<!--     <div class="slideshow">
 
       <div class="slide" style="background: green;">Text 1</div>
       <div class="slide" style="background: red;">Text 2</div>
@@ -42,7 +50,7 @@
     $('.slideshow').each( function() {  
       var $slideshow = $(this);
       $slideshow.imagesLoaded( function() {
-        $('.slideshow').skidder({
+        $slideshow.skidder({
           slideClass    : '.slide',
           scaleSlides   : true,
           maxSlideWidth : 1300,
@@ -56,6 +64,24 @@
         });
       });
     });
+
+    // $('.slideshow-nocycle').each( function() {  
+    //   var $slideshow = $(this);
+    //   $slideshow.imagesLoaded( function() {
+    //     $slideshow.skidder({
+    //       slideClass    : '.slide',
+    //       scaleSlides   : true,
+    //       maxSlideWidth : 1300,
+    //       maxSlideHeight: 500,
+    //       leftaligned   : true,
+    //       cycle         : false,
+    //       paging        : true,
+    //       swiping       : true,
+    //       jumpback      : false,
+    //       speed         : 400
+    //     });
+    //   });
+    // });
     
     $(window).smartresize(function(){
       $('.slideshow').skidder('resize');
