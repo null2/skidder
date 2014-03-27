@@ -461,6 +461,7 @@ if ( typeof Object.create != 'function') {
       var self = this;
       self.$slides = self.$wrapper.find('.skidder-slide');
     },
+
     refreshImages: function() {
       var self = this;
       self.$images = self.$slides.find('img'); // find images
@@ -473,10 +474,12 @@ if ( typeof Object.create != 'function') {
       // console.log('resize');
       var self = $(this).data('skidder');
 
-      if (self && self.options.length && self.options.scaleSlides) { // check self for IE8
-        self.scaleSlides();
-      }
-      self.centerPosition();
+      if (self && self.options ) { // make sure skidder has been attached for ie8, who fires resize on page load
+        if (self.options.scaleSlides) {
+          self.scaleSlides();
+        }
+        self.centerPosition();
+      }     
     }
   }
 
