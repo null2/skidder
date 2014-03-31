@@ -165,7 +165,7 @@ if ( typeof Object.create != 'function') {
         } 
       }
 
-      if ("ontouchstart" in document.documentElement) {
+      if ("ontouchstart" in document.documentElement && self.options.paging) {
         // if mobile, show paging
         self.$pager.find('.skidder-pager-dot').css('opacity', 1);
       }
@@ -229,7 +229,10 @@ if ( typeof Object.create != 'function') {
       var touchinterval;
       // var velocity;
       var $activeslide = self.$slides.filter('.active');
-      var $activedot = self.$pagerdots.filter('.active');
+      if (self.options.paging) {
+        var $activedot = self.$pagerdots.filter('.active');
+      }
+
 
       if (e.type == "touchstart") {
         e.stopPropagation();
@@ -255,28 +258,43 @@ if ( typeof Object.create != 'function') {
       } else if (e.type == "touchend") {
         
         self.finalX = e.originalEvent.changedTouches[0].pageX;
+        self.finalY = e.originalEvent.changedTouches[0].pageY;
         diffX = self.finalX - self.initialX;
+        diffY = self.finalY - self.initialY;
         touchinterval = new Date().getTime() - self.touchtime;
-        // console.log(touchinterval);
+        // console.log('diffX: ' + diffX + ' diffY: ' + diffY);
+        // console.log('touchinterval: ' + touchinterval);
 
         if (diffX > $activeslide.innerWidth()/2 || diffX > 0 && touchinterval < 350) { // replace interval by velocity for long fast swipes?
 
           self.removeEventHandlers();
           $activeslide.prev().addClass('active');
           $activeslide.removeClass('active').addClass('disengage');
-          self.$pagerdots.removeClass('active'); 
-          $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active'); 
-          self.scrollWrapper('prev', -1, diffX);
+          if (self.options.paging) {
+            self.$pagerdots.removeClass('active'); 
+            $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active'); 
+          }
+          self.scrollWrapper('prev', -1, diffX, 'easeOutSkidder');
         
         } else if (diffX < -($activeslide.innerWidth()/2) || diffX < 0 && touchinterval < 350) { // replace interval by velocity for long fast swipes?
 
           self.removeEventHandlers();
           $activeslide.next().addClass('active');
           $activeslide.removeClass('active').addClass('disengage');
-           self.$pagerdots.removeClass('active'); 
-          $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
-          self.scrollWrapper('next', 1, diffX);
+          if (self.options.paging) {
+            self.$pagerdots.removeClass('active'); 
+            $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
+          }
+          self.scrollWrapper('next', 1, diffX, 'easeOutSkidder');
         
+        } else if (diffX < 5 && diffY < 5 && $activeslide.attr('href')) { // it's a click!
+
+          self.$wrapper.css({
+            'left': self.leftPosition
+          });
+          window.clearTimeout(self.autoplaying);
+          window.location.href = $activeslide.attr('href');
+
         } else { // return to original position
 
           self.$wrapper.animate({
@@ -363,9 +381,10 @@ if ( typeof Object.create != 'function') {
       }, self.options.interval);
     },
 
-    scrollWrapper: function(direction, jumpsize, dragoffset) {
+    scrollWrapper: function(direction, jumpsize, dragoffset, easingfunction) {
       var self = this;
       var touchoffset = dragoffset || 0;
+      var easing = easingfunction || 'swing';
 
       window.clearTimeout(self.autoplaying);
 
@@ -401,7 +420,7 @@ if ( typeof Object.create != 'function') {
       // move slide and callback
       self.$wrapper.animate({
         'left': self.leftPosition
-      }, self.options.speed, function() {
+      }, self.options.speed, easing, function() {
 
         // reapply click handlers
         self.addEventHandlers();
@@ -514,6 +533,13 @@ if ( typeof Object.create != 'function') {
     autoplay      : false,
     interval      : 4000
   };
+
+  $.extend($.easing, { 
+    easeOutSkidder: function (x, t, b, c, d) {
+        return -c *(t/=d)*(t-2) + b;
+    },
+  });
+
 
    
 
