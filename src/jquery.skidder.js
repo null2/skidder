@@ -116,25 +116,27 @@ if ( typeof Object.create != 'function') {
 
         self.setSlideshowHeight(maxHeight);
 
-        self.$images.each(function() { 
+        if (self.$slides.find('img').lenght > 0) {
+          self.$images.each(function() { 
 
-          if ($(this).naturalHeight() > maxHeight) {
-            $(this).css({
-              width   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
-              height  : maxHeight
-            });
-          } else if ($(this).naturalWidth() > maxWidth) {
-            $(this).css({
-              width   : maxWidth,
-              height  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
-            });
-          } else {
-            $(this).css({
-              width   : 'auto',
-              height  : maxHeight
-            });
-          }
-        });
+            if ($(this).naturalHeight() > maxHeight) {
+              $(this).css({
+                width   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
+                height  : maxHeight
+              });
+            } else if ($(this).naturalWidth() > maxWidth) {
+              $(this).css({
+                width   : maxWidth,
+                height  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
+              });
+            } else {
+              $(this).css({
+                width   : 'auto',
+                height  : maxHeight
+              });
+            }
+          });
+        }
 
         // set new leftPosition executed in scrollWrapper // TODO: does not work on load as active slide is not set yet! do we need this to work?
         // self.refreshSlides();
@@ -331,7 +333,11 @@ if ( typeof Object.create != 'function') {
         } else if (direction == 'prev') {
           $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active'); 
         }       
-      } 
+      }
+
+      if ( $.isFunction( self.options.afterSliding ) ) {
+         self.options.afterSliding.call(this);
+      }
     },
 
     clickHandlerPaging: function(e) {
@@ -531,7 +537,8 @@ if ( typeof Object.create != 'function') {
     jumpback      : false,
     speed         : 400,
     autoplay      : false,
-    interval      : 4000
+    interval      : 4000,
+    afterSliding  : function() {}
   };
 
   $.extend($.easing, { 

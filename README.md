@@ -62,7 +62,7 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | speed           | Transition speed. _Default: 400_    |
 | autoplay        | _Default: false    |
 | interval        | Autoplay interval _Default: 4000    |
-
+| afterSliding    | Define if you need a callback function
 
 ###Styling
 
@@ -80,6 +80,7 @@ Default styles are included in jquery.skidder.css - change at will.
 - adapt speed to slide width
 - ~~don't initialise if <2 images~~
 - callback functions
+- at the moment not possible mixing <img> and non-img slides
 
 
 ##Credits and license
