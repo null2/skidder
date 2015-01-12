@@ -65,9 +65,11 @@ if ( typeof Object.create != 'function') {
           },
         });
       }
-      if (self.options.paging) {
+      if (self.options.paging && self.options.autoPaging) {
         self.$viewport.append('<div class="skidder-paging"></div>');
-        self.$pager = self.$viewport.find('.skidder-paging')
+        self.$pager = self.$viewport.find('.skidder-paging');
+      } else if (self.options.paging) {
+        self.$pager = self.$viewport.find(self.options.pagingWrapper);
       }
 
       self.leftPosition = 0;
@@ -162,43 +164,72 @@ if ( typeof Object.create != 'function') {
       // 
       for (i = 0; i < self.$slides.length; i++ ) {
         slidesTotalWidth += self.$slides.eq(i).innerWidth();
-        if (self.options.paging) {
+        if (self.options.paging && self.options.autoPaging) {
           self.$pager.append('<div class="skidder-pager-dot"></div>');
         } 
       }
 
       if ("ontouchstart" in document.documentElement && self.options.paging) {
         // if mobile, show paging
-        self.$pager.find('.skidder-pager-dot').css('opacity', 1);
+        self.$pager.find(self.options.pagingElement).css('opacity', 1);
       }
 
-      if (self.options.cycle && self.$slides.length > 1) {
-        // clone two sets of slides 
-        self.$slides.clone().addClass('skidder-clone skidder-clone-pre').prependTo(self.$wrapper);
-        self.$slides.clone().addClass('skidder-clone skidder-clone-post').appendTo(self.$wrapper);
+      if (self.options.transition == "slide") {
+        if (self.options.cycle && self.$slides.length > 1) {
+          // clone two sets of slides 
+          self.$slides.clone(true).addClass('skidder-clone skidder-clone-pre').prependTo(self.$wrapper);
+          self.$slides.clone(true).addClass('skidder-clone skidder-clone-post').appendTo(self.$wrapper);
 
-        // set initial left position
-        self.leftPosition = -slidesTotalWidth;
-        self.$wrapper.css('left', self.leftPosition);
+          // set initial left position
+          self.leftPosition = -slidesTotalWidth;
+          self.$wrapper.css('left', self.leftPosition);
 
-        self.refreshSlides();
-        self.refreshImages();
-      } else if ( self.$slides.length > 1 ){
-        self.$clickwrappers.find('.skidder-prev').hide(0);
+          self.refreshSlides();
+          self.refreshImages();
+        } else if ( self.$slides.length > 1 ){
+          self.$clickwrappers.find('.skidder-prev').hide(0);
+        }
+      }
+
+      if (self.options.transition == "fade") {
+        if (self.options.cycle && self.$slides.length > 1) {
+
+          self.$slides.clone(true).addClass('skidder-clone skidder-clone-pre').prependTo(self.$wrapper);
+
+          $(".skidder-slide").css( "opacity", 1).css("transition", "none");
+          $(".skidder-wrapper").css("position", "absolute");
+          $(".skidder-slide").css("position", "absolute");
+          $(".skidder-slide").hide();
+
+          self.refreshSlides();
+          self.refreshImages();
+        } else if ( self.$slides.length > 1 ){
+          self.$clickwrappers.find('.skidder-prev').hide(0);
+        }
       }
 
       $activeslide.addClass('active');
 
+      if (self.options.transition == "fade") {
+        $(".skidder-slide.active").fadeIn(100);
+      }
+
       // add clickhandlers
       if (self.$slides.length > 1) {
         if (self.options.paging) {
-          self.$pagerdots = self.$pager.find('.skidder-pager-dot');
+
+          self.$pagerdots = self.$pager.find(self.options.pagingElement);
           self.$pagerdots.eq(0).addClass('active'); 
         }
         self.addEventHandlers();
       }
 
       self.$wrapper.css('opacity', 1);
+
+      if ( $.isFunction( self.options.afterInit ) ) {
+         self.options.afterInit.call(this);
+      }
+
     },
 
     addEventHandlers: function() {
@@ -276,7 +307,7 @@ if ( typeof Object.create != 'function') {
             self.$pagerdots.removeClass('active'); 
             $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active'); 
           }
-          self.scrollWrapper('prev', -1, diffX, 'easeOutSkidder');
+          self.transitionWrapper('prev', -1, diffX, 'easeOutSkidder');
         
         } else if (diffX < -($activeslide.innerWidth()/2) || diffX < 0 && touchinterval < 350) { // replace interval by velocity for long fast swipes?
 
@@ -287,7 +318,7 @@ if ( typeof Object.create != 'function') {
             self.$pagerdots.removeClass('active'); 
             $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
           }
-          self.scrollWrapper('next', 1, diffX, 'easeOutSkidder');
+          self.transitionWrapper('next', 1, diffX, 'easeOutSkidder');
         
         } else if (diffX < 5 && diffY < 5 && $activeslide.attr('href')) { // it's a click!
 
@@ -317,12 +348,13 @@ if ( typeof Object.create != 'function') {
           self.$slides.eq(0) 
           : $fromSlide.next()) 
         : $fromSlide.prev());
+
       $toSlide.addClass('active');
       $fromSlide.addClass('disengage').removeClass('active');
       var jumpsize = (direction == 'next' ? 1 : -1);
       
       self.removeEventHandlers();
-      self.scrollWrapper(direction, jumpsize);
+      self.transitionWrapper(direction, jumpsize);
 
       //update paging
       if (self.options.paging) {
@@ -350,6 +382,13 @@ if ( typeof Object.create != 'function') {
       var $fromSlide = self.$slides.filter('.active');
       var $toSlide = self.$slides.eq(self.$slides.index($fromSlide)+jumpsize);
 
+      if (self.options.transition == "fade") {
+        $($fromSlide).fadeOut();
+      }
+
+      e.stopPropagation();
+      e.preventDefault();
+
       // update paging
       self.$pagerdots.removeClass('active').eq(jumpindex).addClass('active');
       
@@ -357,7 +396,7 @@ if ( typeof Object.create != 'function') {
       $toSlide.addClass('active').removeClass('disengage');
       
       self.removeEventHandlers();
-      self.scrollWrapper(direction, jumpsize);
+      self.transitionWrapper(direction, jumpsize);
     },
 
     autoplay: function() {
@@ -382,7 +421,7 @@ if ( typeof Object.create != 'function') {
                  
         } 
 
-        self.scrollWrapper('next', 1);
+        self.transitionWrapper('next', 1);
 
       }, self.options.interval);
     },
@@ -406,7 +445,7 @@ if ( typeof Object.create != 'function') {
           }
         // TODO: rewrite with jumpsize, ditch direction 
         } else if (self.options.leftaligned) {
-          xoffset = (jumpsize > 0 ? -$disengagingSlide.innerWidth() : self.$slides.filter('.active').innerWidth());
+          xoffset = (jumpsize > 0 ? (-$disengagingSlide.innerWidth() * jumpsize) : (-self.$slides.filter('.active').innerWidth() * jumpsize));
         
         } else { //centered
           for (j = 0; j <= Math.abs(jumpsize); j++) {        
@@ -430,7 +469,6 @@ if ( typeof Object.create != 'function') {
 
         // reapply click handlers
         self.addEventHandlers();
-
         self.refreshSlides();
         self.refreshImages();
       
@@ -461,6 +499,66 @@ if ( typeof Object.create != 'function') {
 
       self.$slides.removeClass('disengage');
 
+    },
+
+    fadeWrapper: function(direction, jumpsize) {
+      var self = this;
+
+      window.clearTimeout(self.autoplaying);
+
+        $(".disengage").fadeOut(200, "swing", function (){
+          $('.active').fadeIn(200);
+        });
+
+        var jumpsize = (direction == 'next' ? 1 : -1);
+
+      self.$wrapper.animate({
+        'left': 0
+      }, function() {
+
+        $(".skidder-slide").css( "opacity", 1).css("transition", "none");
+
+        $(".skidder-slide.active").fadeIn(100);
+
+        self.addEventHandlers();
+        self.refreshSlides();
+        self.refreshImages();
+
+
+      // reorder slides
+        if (jumpsize > 0 && self.options.cycle) {
+          self.leftPosition += self.$slides.eq(0).innerWidth()
+          // self.$wrapper.css('left', self.leftPosition );
+          self.$slides.eq(0).appendTo(self.$wrapper);
+        } else if (jumpsize < 0 && self.options.cycle) {
+          self.leftPosition -= self.$slides.eq(-1).innerWidth()
+          // self.$wrapper.css('left', self.leftPosition);
+          self.$slides.eq(-1).prependTo(self.$wrapper);
+        }
+
+      // handle jumpback option
+        if (self.options.jumpback) {
+          if (self.$slides.eq(-1).hasClass('active')) {
+            self.$clickwrappers.find('.skidder-next').addClass('jumpback');
+          } else {
+            self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
+          }
+        } 
+
+        if (self.options.autoplay) {
+          self.autoplaying = self.autoplay();
+        }
+      });
+      self.$slides.removeClass('disengage');
+    },
+
+    transitionWrapper: function(direction, jumpsize, dragoffset, easingfunction) {
+      var self = this;
+      if (self.options.transition == "slide") {
+        self.scrollWrapper(direction, jumpsize, dragoffset, easingfunction);
+      } else if (self.options.transition == "fade"){
+        self.fadeWrapper(direction, jumpsize);
+      }
     },
 
     centerPosition: function() {  
@@ -504,7 +602,15 @@ if ( typeof Object.create != 'function') {
           self.scaleSlides();
         }
         self.centerPosition();
-      }     
+      }   
+    },
+    stopAutoplay: function() {
+      // console.log('stopAutoplay');
+      var self = $(this).data('skidder');
+
+      if (self && self.options ) { // make sure skidder has been attached for ie8, who fires resize on page load
+        window.clearTimeout(self.autoplaying);
+      }
     }
   }
 
@@ -531,6 +637,9 @@ if ( typeof Object.create != 'function') {
     maxSlideWidth : 800,
     maxSlideHeight: 500,
     paging        : true,
+    autoPaging    : true,
+    pagingWrapper : ".skidder-pager",
+    pagingElement : ".skidder-pager-dot",
     swiping       : true,
     leftaligned   : false,
     cycle         : true,   
@@ -538,16 +647,16 @@ if ( typeof Object.create != 'function') {
     speed         : 400,
     autoplay      : false,
     interval      : 4000,
-    afterSliding  : function() {}
+    transition    : "slide",
+    afterSliding  : function() {},
+    afterInit     : function() {}
   };
 
   $.extend($.easing, { 
     easeOutSkidder: function (x, t, b, c, d) {
-        return -c *(t/=d)*(t-2) + b;
+      return -c *(t/=d)*(t-2) + b;
     },
   });
-
-
-   
+ 
 
 }(jQuery, window, document));
