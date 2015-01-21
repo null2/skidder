@@ -50,7 +50,7 @@ if ( typeof Object.create != 'function') {
       if (self.$slides.length > 1) {
         self.$viewport.append('<div class="skidder-prevwrapper skidder-clickwrapper"><div class="skidder-prev skidder-clickelement"></div></div><div class="skidder-nextwrapper skidder-clickwrapper"><div class="skidder-next skidder-clickelement"></div></div>');
         self.$clickwrappers = self.$viewport.find('.skidder-clickwrapper');
-        if ("ontouchstart" in document.documentElement) {  
+        if ("ontouchstart" in document.documentElement) {
           if (self.options.swiping) {
             // if swiping, append touchwrapper
             self.$viewport.append('<div class="skidder-touchwrapper"></div>');
@@ -87,14 +87,19 @@ if ( typeof Object.create != 'function') {
         self.setSlideshowHeight(newMaxHeight);
       }
 
-      self.preloadSlides();  
+      self.preloadSlides();
       self.centerPosition();
-      self.$viewport.css('opacity', 1);
+
+      window.setTimeout(function() {
+         self.$viewport.css('opacity', 1);
+      }, 400);
+
+
 
       if (self.options.autoplay) {
         self.autoplaying = self.autoplay();
       }
-      
+
 
     },
 
@@ -119,7 +124,7 @@ if ( typeof Object.create != 'function') {
         self.setSlideshowHeight(maxHeight);
 
         if (self.$slides.find('img').lenght > 0) {
-          self.$images.each(function() { 
+          self.$images.each(function() {
 
             if ($(this).naturalHeight() > maxHeight) {
               $(this).css({
@@ -161,12 +166,12 @@ if ( typeof Object.create != 'function') {
       var $activeslide = self.$slides.eq(0);
       var slidesTotalWidth = 0;
 
-      // 
+      //
       for (i = 0; i < self.$slides.length; i++ ) {
         slidesTotalWidth += self.$slides.eq(i).innerWidth();
-        if (self.options.paging && self.options.autoPaging) {
+        if (self.options.paging && self.options.autoPaging && self.$slides.length > 1) {
           self.$pager.append('<div class="skidder-pager-dot"></div>');
-        } 
+        }
       }
 
       if ("ontouchstart" in document.documentElement && self.options.paging) {
@@ -176,7 +181,7 @@ if ( typeof Object.create != 'function') {
 
       if (self.options.transition == "slide") {
         if (self.options.cycle && self.$slides.length > 1) {
-          // clone two sets of slides 
+          // clone two sets of slides
           self.$slides.clone(true).addClass('skidder-clone skidder-clone-pre').prependTo(self.$wrapper);
           self.$slides.clone(true).addClass('skidder-clone skidder-clone-post').appendTo(self.$wrapper);
 
@@ -192,17 +197,9 @@ if ( typeof Object.create != 'function') {
       }
 
       if (self.options.transition == "fade") {
+        self.$viewport.addClass('fade');
         if (self.options.cycle && self.$slides.length > 1) {
-
-          self.$slides.clone(true).addClass('skidder-clone skidder-clone-pre').prependTo(self.$wrapper);
-
-          $(".skidder-slide").css( "opacity", 1).css("transition", "none");
-          $(".skidder-wrapper").css("position", "absolute");
-          $(".skidder-slide").css("position", "absolute");
-          $(".skidder-slide").hide();
-
-          self.refreshSlides();
-          self.refreshImages();
+          $(".skidder-wrapper, .skidder-slide").css("position", "absolute");
         } else if ( self.$slides.length > 1 ){
           self.$clickwrappers.find('.skidder-prev').hide(0);
         }
@@ -210,16 +207,12 @@ if ( typeof Object.create != 'function') {
 
       $activeslide.addClass('active');
 
-      if (self.options.transition == "fade") {
-        $(".skidder-slide.active").fadeIn(100);
-      }
-
       // add clickhandlers
       if (self.$slides.length > 1) {
         if (self.options.paging) {
 
           self.$pagerdots = self.$pager.find(self.options.pagingElement);
-          self.$pagerdots.eq(0).addClass('active'); 
+          self.$pagerdots.eq(0).addClass('active');
         }
         self.addEventHandlers();
       }
@@ -234,30 +227,34 @@ if ( typeof Object.create != 'function') {
 
     addEventHandlers: function() {
       var self = this;
-      if (self.options.paging) {
-        self.$pagerdots.on('click touchend', function(e){self.clickHandlerPaging(e)}); 
+      if (self.$slides.length > 1) {
+        if (self.options.paging) {
+          self.$pagerdots.on('click touchend', function(e){self.clickHandlerPaging(e)});
+        }
+        if ("ontouchstart" in document.documentElement && self.options.swiping && self.options.transition == "slide") {
+          self.$touchwrapper.on('touchstart touchmove touchend', function(e){self.swipeHandler(e)});
+        } else {
+          self.$clickwrappers.on('click touchend', function(e){self.clickHandlerLeftRight(e)});
+        }
       }
-      if ("ontouchstart" in document.documentElement && self.options.swiping) {
-        self.$touchwrapper.on('touchstart touchmove touchend', function(e){self.swipeHandler(e)});
-      } else {
-        self.$clickwrappers.on('click', function(e){self.clickHandlerLeftRight(e)});
-      } 
     },
 
     removeEventHandlers: function() {
       var self = this;
-      if (self.options.paging) {
-        self.$pagerdots.off('click touchend'); 
-      }
-      if ("ontouchstart" in document.documentElement) {
-        self.$touchwrapper.off('touchstart touchmove touchend');
-      } else {
-        self.$clickwrappers.off('click');
+      if (self.$slides.length > 1) {
+        if (self.options.paging) {
+          self.$pagerdots.off('click touchend');
+        }
+        if ("ontouchstart" in document.documentElement) {
+          self.$touchwrapper.off('touchstart touchmove touchend');
+        } else {
+          self.$clickwrappers.off('click');
+        }
       }
     },
 
     swipeHandler: function(e) {
-      var self = this;  
+      var self = this;
       var diffX = 0;
       var touchinterval;
       // var velocity;
@@ -278,10 +275,10 @@ if ( typeof Object.create != 'function') {
       } else if (e.type == "touchmove") {
         e.stopPropagation();
         e.preventDefault();
-        
+
         diffX = e.originalEvent.changedTouches[0].pageX - self.initialX;
         diffY = e.originalEvent.changedTouches[0].pageY - self.initialY;
-        
+
         self.$wrapper.css('left', self.leftPosition + diffX);
 
         if (Math.abs(diffY) > Math.abs(diffX)) {
@@ -289,7 +286,7 @@ if ( typeof Object.create != 'function') {
         }
 
       } else if (e.type == "touchend") {
-        
+
         self.finalX = e.originalEvent.changedTouches[0].pageX;
         self.finalY = e.originalEvent.changedTouches[0].pageY;
         diffX = self.finalX - self.initialX;
@@ -304,22 +301,22 @@ if ( typeof Object.create != 'function') {
           $activeslide.prev().addClass('active');
           $activeslide.removeClass('active').addClass('disengage');
           if (self.options.paging) {
-            self.$pagerdots.removeClass('active'); 
-            $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active'); 
+            self.$pagerdots.removeClass('active');
+            $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active');
           }
           self.transitionWrapper('prev', -1, diffX, 'easeOutSkidder');
-        
+
         } else if (diffX < -($activeslide.innerWidth()/2) || diffX < 0 && touchinterval < 350) { // replace interval by velocity for long fast swipes?
 
           self.removeEventHandlers();
           $activeslide.next().addClass('active');
           $activeslide.removeClass('active').addClass('disengage');
           if (self.options.paging) {
-            self.$pagerdots.removeClass('active'); 
-            $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
+            self.$pagerdots.removeClass('active');
+            $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active');
           }
           self.transitionWrapper('next', 1, diffX, 'easeOutSkidder');
-        
+
         } else if (diffX < 5 && diffY < 5 && $activeslide.attr('href')) { // it's a click!
 
           self.$wrapper.css({
@@ -333,38 +330,40 @@ if ( typeof Object.create != 'function') {
           self.$wrapper.animate({
             'left': self.leftPosition
           }, self.options.speed );
-        
+
         }
       }
     },
 
     clickHandlerLeftRight: function(e) {
-      
+
       var self = this;
-      var direction = $(e.target).closest('[data-direction]').andSelf().attr('data-direction');
+      var direction = $(e.target).closest('[data-direction]').addBack().attr('data-direction');
       var $fromSlide = self.$slides.filter('.active');
-      var $toSlide = (direction == 'next' ? 
-        (self.options.leftaligned && self.options.jumpback && self.$slides.eq(-1).hasClass('active') ? 
-          self.$slides.eq(0) 
-          : $fromSlide.next()) 
-        : $fromSlide.prev());
+      var $toSlide = (direction == 'next' ?
+        (((self.options.leftaligned && self.options.jumpback) || self.options.transition == "fade") && self.$slides.eq(-1).hasClass('active') ?
+          self.$slides.eq(0)
+          : $fromSlide.next())
+        : (self.options.transition =="fade" && self.$slides.eq(0).hasClass('active') ?
+          self.$slides.eq(-1)
+          : $fromSlide.prev()));
 
       $toSlide.addClass('active');
       $fromSlide.addClass('disengage').removeClass('active');
       var jumpsize = (direction == 'next' ? 1 : -1);
-      
+
       self.removeEventHandlers();
       self.transitionWrapper(direction, jumpsize);
 
       //update paging
-      if (self.options.paging) {
+      if (self.options.paging && self.$slides.length > 1) {
         var $activedot = self.$pagerdots.filter('.active');
-        self.$pagerdots.removeClass('active'); 
+        self.$pagerdots.removeClass('active');
         if (direction == 'next') {
-          $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
+          $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active');
         } else if (direction == 'prev') {
-          $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active'); 
-        }       
+          $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active');
+        }
       }
 
       if ( $.isFunction( self.options.afterSliding ) ) {
@@ -382,19 +381,15 @@ if ( typeof Object.create != 'function') {
       var $fromSlide = self.$slides.filter('.active');
       var $toSlide = self.$slides.eq(self.$slides.index($fromSlide)+jumpsize);
 
-      if (self.options.transition == "fade") {
-        $($fromSlide).fadeOut();
-      }
-
       e.stopPropagation();
       e.preventDefault();
 
       // update paging
       self.$pagerdots.removeClass('active').eq(jumpindex).addClass('active');
-      
+
       $fromSlide.addClass('disengage').removeClass('active');
       $toSlide.addClass('active').removeClass('disengage');
-      
+
       self.removeEventHandlers();
       self.transitionWrapper(direction, jumpsize);
     },
@@ -403,27 +398,36 @@ if ( typeof Object.create != 'function') {
       var self = this;
 
       var $fromSlide = self.$slides.filter('.active');
-      var $toSlide = self.options.leftaligned && self.options.jumpback && self.$slides.eq(-1).hasClass('active') ? 
+      var $toSlide = ((self.options.leftaligned && self.options.jumpback) || self.options.transition == "fade") && self.$slides.eq(-1).hasClass('active') ?
           self.$slides.eq(0) : $fromSlide.next();
 
       return window.setTimeout(function(){
-        
+
         self.removeEventHandlers();
 
         $fromSlide.addClass('disengage').removeClass('active');
         $toSlide.addClass('active').removeClass('disengage');
 
         //update paging
-        if (self.options.paging) {
+        if (self.options.paging  && self.$slides.length > 1) {
           var $activedot = self.$pagerdots.filter('.active');
-          self.$pagerdots.removeClass('active'); 
-          $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active'); 
-                 
-        } 
+          self.$pagerdots.removeClass('active');
+          $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active');
+
+        }
 
         self.transitionWrapper('next', 1);
 
       }, self.options.interval);
+    },
+
+    transitionWrapper: function(direction, jumpsize, dragoffset, easingfunction) {
+      var self = this;
+      if (self.options.transition == "slide") {
+        self.scrollWrapper(direction, jumpsize, dragoffset, easingfunction);
+      } else if (self.options.transition == "fade"){
+        self.fadeWrapper(direction, jumpsize);
+      }
     },
 
     scrollWrapper: function(direction, jumpsize, dragoffset, easingfunction) {
@@ -441,14 +445,14 @@ if ( typeof Object.create != 'function') {
 
         if (self.options.leftaligned && self.options.jumpback && self.$slides.eq(0).hasClass('active') && self.$slides.eq(-1).hasClass('disengage')) {
           for (var x=0; x<self.$slides.length-1; x++) {
-            xoffset -= self.$slides.eq(x).innerWidth()*-1;   
+            xoffset -= self.$slides.eq(x).innerWidth()*-1;
           }
-        // TODO: rewrite with jumpsize, ditch direction 
+        // TODO: rewrite with jumpsize, ditch direction
         } else if (self.options.leftaligned) {
           xoffset = (jumpsize > 0 ? (-$disengagingSlide.innerWidth() * jumpsize) : (-self.$slides.filter('.active').innerWidth() * jumpsize));
-        
+
         } else { //centered
-          for (j = 0; j <= Math.abs(jumpsize); j++) {        
+          for (j = 0; j <= Math.abs(jumpsize); j++) {
             // console.log($slides.index($slides.eq($slides.index($disengagingSlide))));
             // console.log($slides.index($disengagingSlide));
             // get total offset by iterating through slides between disengaging and active slides
@@ -471,7 +475,7 @@ if ( typeof Object.create != 'function') {
         self.addEventHandlers();
         self.refreshSlides();
         self.refreshImages();
-      
+
         // reorder slides
         if (jumpsize > 0 && self.options.cycle) {
           self.leftPosition += self.$slides.eq(0).innerWidth()
@@ -490,7 +494,7 @@ if ( typeof Object.create != 'function') {
           } else {
             self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
           }
-        } 
+        }
 
         if (self.options.autoplay) {
           self.autoplaying = self.autoplay();
@@ -506,70 +510,33 @@ if ( typeof Object.create != 'function') {
 
       window.clearTimeout(self.autoplaying);
 
-        $(".disengage").fadeOut(200, "swing", function (){
-          $('.active').fadeIn(200);
-        });
+      self.addEventHandlers();
 
-        var jumpsize = (direction == 'next' ? 1 : -1);
-
-      self.$wrapper.animate({
-        'left': 0
-      }, function() {
-
-        $(".skidder-slide").css( "opacity", 1).css("transition", "none");
-
-        $(".skidder-slide.active").fadeIn(100);
-
-        self.addEventHandlers();
-        self.refreshSlides();
-        self.refreshImages();
-
-
-      // reorder slides
-        if (jumpsize > 0 && self.options.cycle) {
-          self.leftPosition += self.$slides.eq(0).innerWidth()
-          // self.$wrapper.css('left', self.leftPosition );
-          self.$slides.eq(0).appendTo(self.$wrapper);
-        } else if (jumpsize < 0 && self.options.cycle) {
-          self.leftPosition -= self.$slides.eq(-1).innerWidth()
-          // self.$wrapper.css('left', self.leftPosition);
-          self.$slides.eq(-1).prependTo(self.$wrapper);
-        }
-
-      // handle jumpback option
-        if (self.options.jumpback) {
-          if (self.$slides.eq(-1).hasClass('active')) {
-            self.$clickwrappers.find('.skidder-next').addClass('jumpback');
+      // handle jumpback option - TODO: test with fade
+      if (self.options.jumpback) {
+        if (self.$slides.eq(-1).hasClass('active')) {
+          self.$clickwrappers.find('.skidder-next').addClass('jumpback');
           } else {
             self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
           }
-        } 
-
-        if (self.options.autoplay) {
-          self.autoplaying = self.autoplay();
         }
-      });
+
+      if (self.options.autoplay) {
+        self.autoplaying = self.autoplay();
+      }
+
       self.$slides.removeClass('disengage');
     },
 
-    transitionWrapper: function(direction, jumpsize, dragoffset, easingfunction) {
-      var self = this;
-      if (self.options.transition == "slide") {
-        self.scrollWrapper(direction, jumpsize, dragoffset, easingfunction);
-      } else if (self.options.transition == "fade"){
-        self.fadeWrapper(direction, jumpsize);
-      }
-    },
-
-    centerPosition: function() {  
+    centerPosition: function() {
       // console.log('[centerPosition]');
       var self = this;
 
       if (self.options.leftaligned) {
         // self.$wrapper.css('margin-left', (self.$viewport.innerWidth() - 940)/2 -35); // TODO
-        self.$wrapper.css('margin-left', Math.max(0, self.$viewport.innerWidth() - self.options.maxSlideWidth)/2); 
+        self.$wrapper.css('margin-left', Math.max(0, self.$viewport.innerWidth() - self.options.maxSlideWidth)/2);
       } else {
-        var leftmargin = (self.$viewport.innerWidth() - self.$slides.filter('.active').innerWidth())/2; 
+        var leftmargin = (self.$viewport.innerWidth() - self.$slides.filter('.active').innerWidth())/2;
         self.$wrapper.css('margin-left', leftmargin);
       }
     },
@@ -602,7 +569,7 @@ if ( typeof Object.create != 'function') {
           self.scaleSlides();
         }
         self.centerPosition();
-      }   
+      }
     },
     stopAutoplay: function() {
       // console.log('stopAutoplay');
@@ -621,7 +588,7 @@ if ( typeof Object.create != 'function') {
       method = Skidder[method];
       arguments = Array.prototype.slice.call(arguments, 1);
       return this.each(function(){
-        method.apply(this, arguments);  
+        method.apply(this, arguments);
       });
     } else if( typeof(method) == 'object' || !method ) {
       return this.each(function() {
@@ -642,7 +609,7 @@ if ( typeof Object.create != 'function') {
     pagingElement : ".skidder-pager-dot",
     swiping       : true,
     leftaligned   : false,
-    cycle         : true,   
+    cycle         : true,
     jumpback      : false,
     speed         : 400,
     autoplay      : false,
@@ -652,11 +619,11 @@ if ( typeof Object.create != 'function') {
     afterInit     : function() {}
   };
 
-  $.extend($.easing, { 
+  $.extend($.easing, {
     easeOutSkidder: function (x, t, b, c, d) {
       return -c *(t/=d)*(t-2) + b;
     },
   });
- 
+
 
 }(jQuery, window, document));
