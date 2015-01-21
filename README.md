@@ -32,7 +32,7 @@ A jQuery slideshow pugin that supports centering, swiping and responsive scaling
 Make sure that images are loaded before initialising the plug-in, or the slideshow might not get sized correctly. You can use [imagesloaded.js](https://github.com/desandro/imagesloaded) for this purpose - load it, then call like this:
 
 ```js
-$('.slideshow').each( function() {  
+$('.slideshow').each( function() {
   var $slideshow = $(this);
   $slideshow.imagesLoaded( function() {
     $slideshow.skidder();
@@ -52,17 +52,25 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | Option          | Description   |
 | ------------- | ------------- |
 | slideClass      | _Default: '.slide'_     |
-| scaleImages     | Scales widest image to maxSlideWidth. Adjusts slideshow height accordingly. Requires images! _Default: false_     |
+| scaleSlides     | Scales widest image to maxSlideWidth. Adjusts slideshow height accordingly. Requires images! _Default: false_     |
 | maxSlideWidth   | Scale widest image to this width if scaleImages == true. _Default: 800_   |
+| maxSlideHeight  |    |
 | paging          | Creates a clickable and stylable paging dot for each slide. _Default: true_    |
+| autoPaging      |    |
+| pagingWrapper   | _Default: '.skidder-pager'_     |
+| pagingElement   | _Default: '.skidder-pager-dot'_     |
 | swiping         | Enable swiping on touch device. _Default: true_    |
 | leftaligned     | Set to true if you don't want your slideshow centered. (true = buggy!) _Default: false_    |
 | cycle           | Set to false if you don't want your slideshow to wrap around (false = buggy!). _Default: true_    |
 | jumpback        | In non-cycling mode jumpback will display a 'return to first slide' arrow at the last slide. Default: false    |
 | speed           | Transition speed. _Default: 400_    |
 | autoplay        | _Default: false    |
+| autoplayResume  | Resume autoplay after paging has been clicked    |
 | interval        | Autoplay interval _Default: 4000    |
-| afterSliding    | Define if you need a callback function
+| transition      | Choose between 'slide' or 'fade'    |
+| afterSliding    | Define if you need a callback function    |
+| afterInit       |     |
+
 
 ###Styling
 
@@ -87,7 +95,7 @@ Default styles are included in jquery.skidder.css - change at will.
 
 ###Author
 Georg Lauteren for null2
-[georg.null2.net](http://georg.null2.net)  
+[georg.null2.net](http://georg.null2.net)
 [twitter.com/_gl03](http://twitter.com/_gl03)
 
 ###License
