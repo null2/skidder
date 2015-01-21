@@ -496,7 +496,7 @@ if ( typeof Object.create != 'function') {
           }
         }
 
-        if (self.options.autoplay) {
+        if (self.options.autoplay && self.options.autoplayResume) {
           self.autoplaying = self.autoplay();
         }
       });
@@ -521,7 +521,7 @@ if ( typeof Object.create != 'function') {
           }
         }
 
-      if (self.options.autoplay) {
+      if (self.options.autoplay && self.options.autoplayResume) {
         self.autoplaying = self.autoplay();
       }
 
@@ -613,6 +613,7 @@ if ( typeof Object.create != 'function') {
     jumpback      : false,
     speed         : 400,
     autoplay      : false,
+    autoplayResume: false,
     interval      : 4000,
     transition    : "slide",
     afterSliding  : function() {},
