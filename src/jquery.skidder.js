@@ -234,7 +234,7 @@ if ( typeof Object.create != 'function') {
         if ("ontouchstart" in document.documentElement && self.options.swiping && self.options.transition == "slide") {
           self.$touchwrapper.on('touchstart touchmove touchend', function(e){self.swipeHandler(e)});
         } else {
-          self.$clickwrappers.on('click touchend', function(e){self.clickHandlerLeftRight(e)});
+          self.$clickwrappers.on('click', function(e){self.clickHandlerLeftRight(e)});
         }
       }
     },
@@ -245,10 +245,10 @@ if ( typeof Object.create != 'function') {
         if (self.options.paging) {
           self.$pagerdots.off('click touchend');
         }
-        if ("ontouchstart" in document.documentElement && self.options.swiping) {
+        if ("ontouchstart" in document.documentElement && self.options.swiping && self.options.transition == "slide") {
           self.$touchwrapper.off('touchstart touchmove touchend');
         } else {
-          self.$clickwrappers.off('click touchend');
+          self.$clickwrappers.off('click');
         }
       }
     },
@@ -615,7 +615,7 @@ if ( typeof Object.create != 'function') {
     autoplay      : false,
     autoplayResume: false,
     interval      : 4000,
-    transition    : "slide",
+    transition    : "fade",
     afterSliding  : function() {},
     afterInit     : function() {}
   };
