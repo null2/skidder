@@ -45,9 +45,9 @@
   <script src="./lib/imagesloaded.js"></script>
   <script src="./lib/smartresize.js"></script>
   <script src="../src/jquery.skidder.js"></script>
-  
+
   <script>
-    $('.slideshow').each( function() {  
+    $('.slideshow').each( function() {
       var $slideshow = $(this);
       $slideshow.imagesLoaded( function() {
         $slideshow.skidder({
@@ -55,20 +55,26 @@
           scaleSlides   : true,
           maxSlideWidth : 1300,
           maxSlideHeight: 500,
+          paging        : true,
+          autoPaging    : true,
+          pagingWrapper : ".skidder-pager",
+          pagingElement : ".skidder-pager-dot",
+          swiping       : false,
           leftaligned   : false,
           cycle         : true,
-          paging        : true,
-          swiping       : true,
           jumpback      : false,
           speed         : 400,
-          autoplay      : true,
+          autoplay      : false,
+          autoplayResume: false,
           interval      : 4000,
-          afterSliding  : function() {}
+          transition    : "fade",
+          afterSliding  : function() {},
+          afterInit     : function() {}
         });
       });
     });
 
-    // $('.slideshow-nocycle').each( function() {  
+    // $('.slideshow-nocycle').each( function() {
     //   var $slideshow = $(this);
     //   $slideshow.imagesLoaded( function() {
     //     $slideshow.skidder({
@@ -88,7 +94,7 @@
     //     });
     //   });
     // });
-    
+
     $(window).smartresize(function(){
       $('.slideshow').skidder('resize');
     });

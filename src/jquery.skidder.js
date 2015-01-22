@@ -245,10 +245,10 @@ if ( typeof Object.create != 'function') {
         if (self.options.paging) {
           self.$pagerdots.off('click touchend');
         }
-        if ("ontouchstart" in document.documentElement) {
+        if ("ontouchstart" in document.documentElement && self.options.swiping) {
           self.$touchwrapper.off('touchstart touchmove touchend');
         } else {
-          self.$clickwrappers.off('click');
+          self.$clickwrappers.off('click touchend');
         }
       }
     },
