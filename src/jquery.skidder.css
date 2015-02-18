@@ -92,7 +92,7 @@
 }
 
 /*PAGING*/
-.skidder-viewport .skidder-paging {
+.skidder-viewport .skidder-pager {
   display: table;
   position: relative;
   top: 92%;
@@ -101,7 +101,7 @@
   padding: 0 0 15px 0;
 }
 
-.skidder-viewport .skidder-paging .skidder-pager-dot {
+.skidder-viewport .skidder-pager .skidder-pager-dot {
   display: table-cell;
   box-sizing: border-box;
   cursor: pointer;
@@ -119,15 +119,15 @@
   transition: opacity 0.2s ease-in-out;
   box-shadow: 0 0 4px 2px rgba(0,0,0,0.1), 0 0 4px 2px rgba(0,0,0,0.1) inset;
 }
-.skidder-viewport .skidder-paging .skidder-pager-dot:last-child {
+.skidder-viewport .skidder-pager .skidder-pager-dot:last-child {
   margin-right: 0;
 }
-.skidder-viewport .skidder-paging .skidder-pager-dot:hover,
-.skidder-viewport .skidder-paging .skidder-pager-dot.active {
+.skidder-viewport .skidder-pager .skidder-pager-dot:hover,
+.skidder-viewport .skidder-pager .skidder-pager-dot.active {
   background-color: #fff;
   box-shadow: 0 0 4px 2px rgba(0,0,0,0.1);
 }
-.skidder-viewport:hover .skidder-paging .skidder-pager-dot {
+.skidder-viewport:hover .skidder-pager .skidder-pager-dot {
   opacity: 1;
 }
 

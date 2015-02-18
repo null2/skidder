@@ -66,8 +66,8 @@ if ( typeof Object.create != 'function') {
         });
       }
       if (self.options.paging && self.options.autoPaging) {
-        self.$viewport.append('<div class="skidder-paging"></div>');
-        self.$pager = self.$viewport.find('.skidder-paging');
+        self.$viewport.append('<div class="skidder-pager"></div>');
+        self.$pager = self.$viewport.find('.skidder-pager');
       } else if (self.options.paging) {
         self.$pager = self.$viewport.find(self.options.pagingWrapper);
       }

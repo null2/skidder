@@ -55,21 +55,20 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | scaleSlides     | Scales widest image to maxSlideWidth. Adjusts slideshow height accordingly. Requires images! _Default: false_     |
 | maxSlideWidth   | Scale widest image to this width if scaleImages == true. _Default: 800_   |
 | maxSlideHeight  |    |
-| paging          | Creates a clickable and stylable paging dot for each slide. _Default: true_    |
-| autoPaging      |    |
-| pagingWrapper   | _Default: '.skidder-pager'_     |
-| pagingElement   | _Default: '.skidder-pager-dot'_     |
-| swiping         | Enable swiping on touch device. _Default: true_    |
+| paging          | If true, Skidder looks for an element _pagingWrapper_ containing element _pagingElement_ to use for paging. if one or both of them are missing, it creates them. Note: paging false is ignored on touch devices (but you can hide it via css) _Default: true_  |
+| pagingWrapper   | custom class name for creating or finding the pager wrapping div _Default: '.skidder-pager'_     |
+| pagingElement   | custom class name for creating or finding the pager dots _Default: '.skidder-pager-dot'_     |
+| swiping         | Enable swiping on touch device. _Default: true_ Note: If enabled touch devices will always use the 'slide' transition  |
 | leftaligned     | Set to true if you don't want your slideshow centered. (true = buggy!) _Default: false_    |
 | cycle           | Set to false if you don't want your slideshow to wrap around (false = buggy!). _Default: true_    |
 | jumpback        | In non-cycling mode jumpback will display a 'return to first slide' arrow at the last slide. Default: false    |
 | speed           | Transition speed. _Default: 400_    |
 | autoplay        | _Default: false    |
 | autoplayResume  | Resume autoplay after paging has been clicked    |
-| interval        | Autoplay interval _Default: 4000    |
-| transition      | Choose between 'slide' or 'fade'    |
-| afterSliding    | Define if you need a callback function    |
-| afterInit       |     |
+| interval        | Autoplay interval _Default: 4000_    |
+| transition      | 'slide' or 'fade' _Default: 'slide'_ Note: If swiping is enabled, touch devices will always use the 'slide' transition   |
+| afterSliding    | function called after changing slides    |
+| afterInit       | function called after Skidder is initialised    |
 
 
 ###Styling
@@ -87,7 +86,7 @@ Default styles are included in jquery.skidder.css - change at will.
 - properly bottom-align paging
 - adapt speed to slide width
 - ~~don't initialise if <2 images~~
-- callback functions
+- ~~callback functions~
 - at the moment not possible mixing <img> and non-img slides
 
 
