@@ -63,8 +63,8 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | cycle           | Set to false if you don't want your slideshow to wrap around (false = buggy!). _Default: true_    |
 | jumpback        | In non-cycling mode jumpback will display a 'return to first slide' arrow at the last slide. Default: false    |
 | speed           | Transition speed. _Default: 400_    |
-| autoplay        | _Default: false    |
-| autoplayResume  | Resume autoplay after paging has been clicked    |
+| autoplay        | _Default: false_    |
+| autoplayResume  | Resume autoplay after interaction  _Default: false_  |
 | interval        | Autoplay interval _Default: 4000_    |
 | transition      | 'slide' or 'fade' _Default: 'slide'_ Note: If swiping is enabled, touch devices will always use the 'slide' transition   |
 | afterSliding    | function called after changing slides    |

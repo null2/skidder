@@ -2,7 +2,6 @@
 .skidder-viewport {
   position: relative;
 	overflow: hidden;
-  opacity: 0;
   transition: opacity 0.4s ease-in-out;
 }
 
@@ -22,7 +21,13 @@
   opacity: 0.7;
   transition: opacity 0.2s ease-in-out;
 }
-.skidder-viewport.fade .skidder-wrapper .skidder-slide {
+
+.skidder-viewport.skidder-fade .skidder-wrapper {
+  width: auto;
+  margin: 0 auto;
+}
+
+.skidder-viewport.skidder-fade .skidder-wrapper .skidder-slide {
   opacity: 0;
   transition: opacity 0.4s ease-in-out;
 }
