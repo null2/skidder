@@ -75,7 +75,7 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 
 Default styles are included in jquery.skidder.css - change at will.
 
-##To Do
+##To Do / Known Issues
 - test and debug leftalign (align to viewport or maxSlideWidth?)/ non-cycle (disable event handlers for first and last slide) / jumpback options
 - adapt swipehandler to nocycle
 - make click cancel autoplay
@@ -88,7 +88,7 @@ Default styles are included in jquery.skidder.css - change at will.
 - ~~don't initialise if <2 images~~
 - ~~callback functions~
 - at the moment not possible mixing <img> and non-img slides
-
+- fade transition requires same size images! (TO: rewrite center function)
 
 ##Credits and license
 

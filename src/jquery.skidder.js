@@ -158,7 +158,9 @@ if ( typeof Object.create != 'function') {
           self.leftPosition -= self.$slides.eq(i).innerWidth();
         }
         // console.log(self.leftPosition);
-        self.$wrapper.css('left', self.leftPosition);
+        if (self.options.transition == "slide") {
+          self.$wrapper.css('left', self.leftPosition);
+        }
 
       }
     },
