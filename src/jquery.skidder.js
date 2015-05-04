@@ -1,8 +1,8 @@
-/* Skidder 0.2 - a jQuery slideshow plugin
+/* Skidder 0.2.2 - a jQuery slideshow plugin
  * Georg Lauteren for null2.net
- * http://twitter.com/_gl03
- * http://georg.null2.net           
- * Thanks: Maja Komel, Andi Pieper */
+ * twitter.com/_gl03  
+ * Contributor: Maja Komel
+ * Thanks: Andi Pieper */
 
 if ( typeof Object.create != 'function') {
   Object.create = function(obj) {

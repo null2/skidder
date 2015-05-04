@@ -1,6 +1,6 @@
 #Skidder
 
-A jQuery slideshow pugin that supports centering, swiping and responsive scaling.
+A jQuery slideshow plug-in that supports centering, swiping and responsive scaling.
 
 ##Features
 - optional paging
@@ -22,7 +22,7 @@ A jQuery slideshow pugin that supports centering, swiping and responsive scaling
   <div class="slide"><img src="3.jpg"></div>
 </div>
 ...
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="../src/jquery.skidder.js"></script>
 <script>
   $('.slideshow').skidder();
@@ -76,11 +76,11 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 Default styles are included in jquery.skidder.css - change at will.
 
 ##To Do / Known Issues
+- use requestAnimationFrame or optional pure css transitions to improve performance
 - test and debug leftalign (align to viewport or maxSlideWidth?)/ non-cycle (disable event handlers for first and last slide) / jumpback options
 - adapt swipehandler to nocycle
 - make click cancel autoplay
 - DRY click/swipe/autoplay events
-- use requestAnimationFrame
 - fold (optional) smartresize into skidder
 - ~~proper swiping~~
 - properly bottom-align paging
@@ -88,7 +88,7 @@ Default styles are included in jquery.skidder.css - change at will.
 - ~~don't initialise if <2 images~~
 - ~~callback functions~
 - at the moment not possible mixing <img> and non-img slides
-- fade transition requires same size images! (TO: rewrite center function)
+- fade transition requires images of equal size (TODO: rewrite center function)
 
 ##Credits and license
 
