@@ -86,7 +86,7 @@ Default styles are included in jquery.skidder.css - change at will.
 - properly bottom-align paging
 - adapt speed to slide width
 - ~~don't initialise if <2 images~~
-- ~~callback functions~
+- ~~callback functions~~
 - at the moment not possible mixing <img> and non-img slides
 - fade transition requires images of equal size (TODO: rewrite center function)
 
