@@ -91,11 +91,12 @@ Default styles are included in jquery.skidder.css - change at will.
 - adapt speed to slide width
 - ~~don't initialise if <2 images~~
 - ~~callback functions~~
-- at the moment not possible mixing <img> and non-img slides
+- at the moment not possible mixing img and non-img slides
 - fade transition requires images of equal size (TODO: rewrite center function)
 
 ##Bugs
 scaleSlides false cause slide divs to be misaligned
+slides may jump in firefox when animationType is set to css
 
 ##Credits and license
 
@@ -106,3 +107,10 @@ Georg Lauteren for null2
 
 ###License
 Licensed under the [MIT License](http://opensource.org/licenses/MIT)
+
+###Sites that use Skidder
+
+- http://null2.net
+- http://www.wildbunch-germany.de
+- http://b2b.berlinale.de
+- http://dummy-magazin.de
