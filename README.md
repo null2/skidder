@@ -29,6 +29,8 @@ A jQuery slideshow plug-in that supports centering, swiping and responsive scali
 </script>
 ```
 
+The slide divs can take an optional data-href attribute for links on mobile.
+
 Make sure that images are loaded before initialising the plug-in, or the slideshow might not get sized correctly. You can use [imagesloaded.js](https://github.com/desandro/imagesloaded) for this purpose - load it, then call like this:
 
 ```js
@@ -52,6 +54,7 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | Option          | Description   |
 | ------------- | ------------- |
 | slideClass      | _Default: '.slide'_     |
+| animationType   | skidder now supports css-only animations if you set animationType to 'css'.  _Default: 'animate'_     |
 | scaleSlides     | Scales widest image to maxSlideWidth. Adjusts slideshow height accordingly. Requires images! _Default: false_     |
 | maxSlideWidth   | Scale widest image to this width if scaleImages == true. _Default: 800_   |
 | maxSlideHeight  |    |
@@ -67,6 +70,7 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 | autoplayResume  | Resume autoplay after interaction  _Default: false_  |
 | interval        | Autoplay interval _Default: 4000_    |
 | transition      | 'slide' or 'fade' _Default: 'slide'_ Note: If swiping is enabled, touch devices will always use the 'slide' transition   |
+| directionClasses | adds classes 'left-from-active' and 'right-from-active' to slides after transition is complete. useful for triggering e.g css transitions on particular slide elements. costs a little performance so leave inactive if not needed. _Default: false_     |
 | afterSliding    | function called after changing slides    |
 | afterInit       | function called after Skidder is initialised    |
 
@@ -76,7 +80,7 @@ You will want to debounce this to save some trees, e.g. with Paul Irish's [smart
 Default styles are included in jquery.skidder.css - change at will.
 
 ##To Do / Known Issues
-- use requestAnimationFrame or optional pure css transitions to improve performance
+- ~~use requestAnimationFrame or optional pure css transitions to improve performance~~
 - test and debug leftalign (align to viewport or maxSlideWidth?)/ non-cycle (disable event handlers for first and last slide) / jumpback options
 - adapt swipehandler to nocycle
 - make click cancel autoplay
@@ -89,6 +93,9 @@ Default styles are included in jquery.skidder.css - change at will.
 - ~~callback functions~~
 - at the moment not possible mixing <img> and non-img slides
 - fade transition requires images of equal size (TODO: rewrite center function)
+
+##Bugs
+scaleSlides false cause slide divs to be misaligned
 
 ##Credits and license
 

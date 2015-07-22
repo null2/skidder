@@ -1,8 +1,13 @@
-/* Skidder 0.2.2 - a jQuery slideshow plugin
+/* Skidder 0.2.6 - a jQuery slideshow plugin
  * Georg Lauteren for null2.net
- * twitter.com/_gl03  
+ * twitter.com/_gl03
  * Contributor: Maja Komel
- * Thanks: Andi Pieper */
+ * Thanks: Andi Pieper
+ * 0.2.3 added directionClasses option
+ * 0.2.4 added css based transitions - untested for mobile
+ * 0.2.5 afterResize callback
+ * 0.2.6 fixed swiping
+ */
 
 if ( typeof Object.create != 'function') {
   Object.create = function(obj) {
@@ -33,7 +38,7 @@ if ( typeof Object.create != 'function') {
     init: function(options, elem) {
 
       var self = this; // instance
-      window.skidder = self; 
+      window.skidder = self;
       self.elem = elem;
       self.$elem = $(elem);
 
@@ -115,38 +120,37 @@ if ( typeof Object.create != 'function') {
         var maxHeight = self.options.maxSlideHeight;
         var scalefactor = 1.0;
 
+        // console.log('maxWidth: ' + maxWidth);
+        // console.log('maxHeight: ' + maxHeight);
+
         self.$images.each(function() {
-
           scalefactor = Math.min(1.0, maxWidth / $(this).naturalWidth()); // if image wider than allowed...
-
           maxHeight = Math.min( maxHeight, Math.ceil($(this).naturalHeight() * scalefactor));
-
-          // console.log('maxHeight: ' + maxHeight);
         });
 
         self.setSlideshowHeight(maxHeight);
 
-        if (self.$slides.find('img').lenght > 0) {
-          self.$images.each(function() {
-
-            if ($(this).naturalHeight() > maxHeight) {
-              $(this).css({
-                width   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
-                height  : maxHeight
-              });
-            } else if ($(this).naturalWidth() > maxWidth) {
-              $(this).css({
-                width   : maxWidth,
-                height  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
-              });
-            } else {
-              $(this).css({
-                width   : 'auto',
-                height  : maxHeight
-              });
-            }
-          });
-        }
+        // unused scaling function - what is intention - investigate
+        // if (self.$slides.find('img').length > 0) {
+        //   self.$images.each(function() {
+        //     if ($(this).naturalHeight() > maxHeight) {
+        //       $(this).css({
+        //         width   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
+        //         height  : maxHeight
+        //       });
+        //     } else if ($(this).naturalWidth() > maxWidth) {
+        //       $(this).css({
+        //         width   : maxWidth,
+        //         height  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
+        //       });
+        //     } else {
+        //       $(this).css({
+        //         width   : 'auto',
+        //         height  : maxHeight
+        //       });
+        //     }
+        //   });
+        // }
 
         // set new leftPosition executed in scrollWrapper // TODO: does not work on load as active slide is not set yet! do we need this to work?
         // self.refreshSlides();
@@ -172,7 +176,7 @@ if ( typeof Object.create != 'function') {
       var slidesTotalWidth = 0;
       if (self.$pager && self.$pager.length) {
         self.$pagerdots = self.$pager.find(self.options.pagingElement);
-      } 
+      }
 
 
       for (i = 0; i < self.$slides.length; i++ ) {
@@ -195,7 +199,19 @@ if ( typeof Object.create != 'function') {
 
           // set initial left position
           self.leftPosition = -slidesTotalWidth;
-          self.$wrapper.css('left', self.leftPosition);
+          self.$wrapper.css({
+            'left': self.leftPosition,
+          });
+
+          if (!self.touchdevice && self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
+            window.setTimeout(function() {
+              var speedstring = "" + (self.options.speed/1000) + "s";
+              self.$wrapper.css({
+                '-webkit-transition': 'left ' + speedstring + ' ease-out',
+                'transition': 'left ' + speedstring + ' ease-out'
+              });
+            },0);
+          }
 
           self.refreshSlides();
           self.refreshImages();
@@ -212,6 +228,10 @@ if ( typeof Object.create != 'function') {
       }
 
       $activeslide.addClass('active');
+
+      if (self.options.directionClasses) {
+        self.addLeftAndRightClasses();
+      };
 
       // add clickhandlers
       if (self.$slides.length > 1) {
@@ -278,6 +298,11 @@ if ( typeof Object.create != 'function') {
         self.initialY = e.originalEvent.changedTouches[0].clientY;
         self.touchtime = new Date().getTime();
 
+        self.$wrapper.css({
+          '-webkit-transition': 'none',
+          'transition': 'none'
+        });
+
       } else if (e.type == "touchmove") {
 
         diffX = e.originalEvent.changedTouches[0].clientX - self.initialX;
@@ -301,6 +326,8 @@ if ( typeof Object.create != 'function') {
         // console.log('totaldiffX: ' + self.totaldiffX + ' totaldiffY: ' + self.totaldiffY);
         // console.log('touchinterval: ' + touchinterval);
 
+        // TODO: DRY left<>right sliding
+
         if (self.totaldiffX > $activeslide.innerWidth()/2 || self.totaldiffX > 0 && touchinterval < 350) { // replace interval by velocity for long fast swipes?
 
           self.removeEventHandlers();
@@ -310,8 +337,14 @@ if ( typeof Object.create != 'function') {
             self.$pagerdots.removeClass('active');
             $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active');
           }
+          if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
+            var speedstring = "" + (self.options.speed/1000) + "s";
+            self.$wrapper.css({
+              '-webkit-transition': 'left ' + speedstring + ' ease-out',
+              'transition': 'left ' + speedstring + ' ease-out'
+            });
+          }
           self.transitionWrapper('prev', -1, self.totaldiffX, 'easeOutSkidder');
-
           if ( $.isFunction( self.options.afterSliding ) ) {
            self.options.afterSliding.call(this);
           }
@@ -325,25 +358,47 @@ if ( typeof Object.create != 'function') {
             self.$pagerdots.removeClass('active');
             $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active');
           }
+          if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
+            var speedstring = "" + (self.options.speed/1000) + "s";
+            self.$wrapper.css({
+              '-webkit-transition': 'left ' + speedstring + ' ease-out',
+              'transition': 'left ' + speedstring + ' ease-out'
+            });
+          }
           self.transitionWrapper('next', 1, self.totaldiffX, 'easeOutSkidder');
-
           if ( $.isFunction( self.options.afterSliding ) ) {
            self.options.afterSliding.call(this);
           }
 
-        } else if (self.totaldiffX < 5 && self.totaldiffY < 5 && $activeslide.attr('href')) { // it's a click!
-
+        } else if (self.totaldiffX < 5 && self.totaldiffY < 5 && $activeslide.attr('data-href')) { // it's a click!
           self.$wrapper.css({
             'left': self.leftPosition
           });
           window.clearTimeout(self.autoplaying);
-          window.location.href = $activeslide.attr('href');
+          window.location.href = $activeslide.attr('data-href');
 
         } else { // return to original position
+          if (self.options.animationType == 'animate') {
+            self.$wrapper.animate({
+              'left': self.leftPosition
+            }, self.options.speed );
 
-          self.$wrapper.animate({
-            'left': self.leftPosition
-          }, self.options.speed );
+          } else if (self.options.animationType == 'css'){
+            var speedstring = "" + (self.options.speed/1000) + "s";
+            self.$wrapper.css({
+              'left': self.leftPosition,
+              '-webkit-transition': 'left ' + speedstring + ' ease-out',
+              'transition': 'left ' + speedstring + ' ease-out'
+            });
+          }
+
+          window.setTimeout(function() {
+            // self.$wrapper.css('left', self.leftPosition);
+            self.$wrapper.css({
+              '-webkit-transition': 'none',
+              'transition': 'none'
+            });
+          }, self.options.speed);
 
           if (self.options.autoplay && self.options.autoplayResume) {
             self.autoplaying = self.autoplay();
@@ -396,7 +451,7 @@ if ( typeof Object.create != 'function') {
         }
       }
 
-      // direction is not updateted for edge cases, because action funtuions don't use it
+      // direction is not updateted for edge cases, because action functions don't use it
 
       if ( $.isFunction( self.options.afterSliding ) ) {
          self.options.afterSliding.call(this);
@@ -490,8 +545,6 @@ if ( typeof Object.create != 'function') {
 
         } else { //centered
           for (j = 0; j <= Math.abs(jumpsize); j++) {
-            // console.log($slides.index($slides.eq($slides.index($disengagingSlide))));
-            // console.log($slides.index($disengagingSlide));
             // get total offset by iterating through slides between disengaging and active slides
             // add only half disengaging and active slides' width
             xoffset += (self.$slides.eq(self.$slides.index($disengagingSlide) + j * (jumpsize > 0  ? 1 : -1 )).innerWidth()/(j==0 || j==Math.abs(jumpsize) ? 2 : 1) * (jumpsize > 0  ? -1 : 1 ));
@@ -504,9 +557,8 @@ if ( typeof Object.create != 'function') {
       self.leftPosition = self.$wrapper.position().left + xoffset - touchoffset;
 
       // move slide and callback
-      self.$wrapper.animate({
-        'left': self.leftPosition
-      }, self.options.speed, easing, function() {
+
+      var callbackfunction = function() {
 
         // reapply click handlers
         self.addEventHandlers();
@@ -536,10 +588,38 @@ if ( typeof Object.create != 'function') {
         if (self.options.autoplay && self.options.autoplayResume) {
           self.autoplaying = self.autoplay();
         }
-      });
 
-      self.$slides.removeClass('disengage');
+        self.$slides.removeClass('disengage');
+        if (self.options.directionClasses) {
+          self.addLeftAndRightClasses();
+        };
 
+        if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
+          // console.log(self.$wrapper.css('transition'));
+          window.setTimeout(function() {
+            var speedstring = "" + (self.options.speed/1000) + "s";
+            self.$wrapper.css({
+              '-webkit-transition': 'left ' + speedstring + ' ease-out',
+              'transition': 'left ' + speedstring + ' ease-out'
+            });
+          }, 0);
+        }
+      };
+
+      if (self.options.animationType == 'animate') {
+        self.$wrapper.animate({
+          'left': self.leftPosition
+        }, self.options.speed, easing, callbackfunction);
+      } else if (self.options.animationType == 'css') {
+        self.$wrapper.css('left', self.leftPosition);
+        window.setTimeout(function() {
+          self.$wrapper.css({
+            '-webkit-transition': 'none',
+            'transition': 'none'
+          });
+          callbackfunction();
+        }, self.options.speed);
+      }
     },
 
     fadeWrapper: function(direction, jumpsize) {
@@ -563,6 +643,9 @@ if ( typeof Object.create != 'function') {
       }
 
       self.$slides.removeClass('disengage');
+      if (self.options.directionClasses) {
+        self.addLeftAndRightClasses();
+      };
     },
 
     centerPosition: function() {
@@ -608,6 +691,9 @@ if ( typeof Object.create != 'function') {
           self.scaleSlides();
         }
         self.centerPosition();
+        if ( $.isFunction( self.options.afterSliding ) ) {
+          self.options.afterResize.call(this);
+        }
       }
     },
     stopAutoplay: function() {
@@ -617,6 +703,23 @@ if ( typeof Object.create != 'function') {
       if (self && self.options ) { // make sure skidder has been attached for ie8, who fires resize on page load
         window.clearTimeout(self.autoplaying);
       }
+    },
+    addLeftAndRightClasses: function() {
+
+      var self = this;
+
+      self.$slides.removeClass('left-from-active right-from-active');
+      self.refreshSlides();
+
+      var activeindex = self.$slides.index(self.$slides.filter('.active').eq(0));
+
+      self.$slides.each(function(i, elem) {
+        if (self.$slides.index($(elem)) < activeindex ) {
+          $(elem).addClass('left-from-active');
+        } else if (self.$slides.index($(elem)) > activeindex ) {
+          $(elem).addClass('right-from-active');
+        }
+      });
     }
   }
 
@@ -638,24 +741,27 @@ if ( typeof Object.create != 'function') {
   };
 
   $.fn.skidder.options = {
-    slideClass    : '.slide',
-    scaleSlides   : true,
-    maxSlideWidth : 800,
-    maxSlideHeight: 500,
-    paging        : true,
-    pagingWrapper : ".skidder-pager",
-    pagingElement : ".skidder-pager-dot",
-    swiping       : true,
-    leftaligned   : false,
-    cycle         : true,
-    jumpback      : false,
-    speed         : 400,
-    autoplay      : false,
-    autoplayResume: false,
-    interval      : 4000,
-    transition    : "slide",
-    afterSliding  : function() {},
-    afterInit     : function() {}
+    slideClass      : '.slide',
+    animationType   : 'animate',
+    scaleSlides     : true,
+    maxSlideWidth   : 800,
+    maxSlideHeight  : 500,
+    paging          : true,
+    pagingWrapper   : ".skidder-pager",
+    pagingElement   : ".skidder-pager-dot",
+    swiping         : true,
+    leftaligned     : false,
+    cycle           : true,
+    jumpback        : false,
+    speed           : 400,
+    autoplay        : false,
+    autoplayResume  : false,
+    interval        : 4000,
+    transition      : "slide",
+    directionClasses: false,
+    afterSliding    : function() {},
+    afterInit       : function() {},
+    afterResize     : function(instance) {}
   };
 
   $.extend($.easing, {
