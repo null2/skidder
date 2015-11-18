@@ -1,4 +1,4 @@
-/* Skidder 0.2.6 - a jQuery slideshow plugin
+/* Skidder 0.2.7 - a jQuery slideshow plugin
  * Georg Lauteren for null2.net
  * twitter.com/_gl03
  * Contributor: Maja Komel
@@ -7,6 +7,7 @@
  * 0.2.4 added css based transitions - untested for mobile
  * 0.2.5 afterResize callback
  * 0.2.6 fixed swiping
+ * 0.2.7 added scaleTo and preservePortrait options, renamed maxWidth and maxheight options, support for non-image slides 
  */
 
 if ( typeof Object.create != 'function') {
@@ -36,7 +37,6 @@ if ( typeof Object.create != 'function') {
   var Skidder = {
 
     init: function(options, elem) {
-
       var self = this; // instance
       window.skidder = self;
       self.elem = elem;
@@ -45,9 +45,14 @@ if ( typeof Object.create != 'function') {
       // merge options
       self.options = $.extend( {},  $.fn.skidder.options, options);
 
+      // // suport deprecated options 
+      // if (self.options.maxWidth) self.options.maxWidth ||= self.options.maxWidth;
+      // if (self.options.maxHeight) self.options.maxHeight ||= self.options.maxHeight;
+
       // attach instance to jquery object
       self.$elem.data('skidder', self);
 
+      // determine touch support
       if (('ontouchstart' in window) ||
         (navigator.maxTouchPoints > 0) ||
         (navigator.msMaxTouchPoints > 0)) {
@@ -60,15 +65,16 @@ if ( typeof Object.create != 'function') {
       self.$elem.wrapInner('<div class="skidder-viewport"></div>');
       self.$viewport = self.$elem.find('.skidder-viewport');
       self.$wrapper = self.$viewport.find('.skidder-wrapper');
+      
       if (self.$slides.length > 1) {
         self.$viewport.append('<div class="skidder-prevwrapper skidder-clickwrapper"><div class="skidder-prev skidder-clickelement"></div></div><div class="skidder-nextwrapper skidder-clickwrapper"><div class="skidder-next skidder-clickelement"></div></div>');
         self.$clickwrappers = self.$viewport.find('.skidder-clickwrapper');
         if (self.touchdevice) {
           if (self.options.swiping) {
-            // if swiping, append touchwrapper
+            // if touch support, append touchwrapper
             self.$viewport.append('<div class="skidder-touchwrapper"></div>');
             self.$touchwrapper = self.$viewport.find('.skidder-touchwrapper');
-          } else { // no swiping, show click controls
+          } else { // no touch support, show click controls
             self.$clickwrappers.find('.skidder-clickelement').css('opacity', 1);
           }
         }
@@ -77,37 +83,54 @@ if ( typeof Object.create != 'function') {
             return $(this).hasClass('skidder-prevwrapper') ? 'prev' : 'next'; // TODO: remove direction
           },
         });
-      }
-      if ((self.touchdevice || self.options.paging)) {
-        self.$pager = self.$viewport.find(self.options.pagingWrapper);
-        if (self.$pager.length < 1) {
-          self.$viewport.append('<div class="' + self.options.pagingWrapper.replace('.', '') +  '"></div>');
+        if ((self.touchdevice || self.options.paging)) {
           self.$pager = self.$viewport.find(self.options.pagingWrapper);
+          if (self.$pager.length < 1) {
+            self.$viewport.append('<div class="' + self.options.pagingWrapper.replace('.', '') +  '"></div>');
+            self.$pager = self.$viewport.find(self.options.pagingWrapper);
+          }
         }
       }
-
+      
       self.leftPosition = 0;
 
       // establish initial dimensions
+
       self.refreshImages(); // select images
 
-      if (self.$images.length && self.options.scaleSlides) { // scaling
+      if (self.$images && self.$images.length && self.options.scaleSlides) { // scaling
+
         self.scaleSlides();
-      } else if (self.$images.length) { // no scaling, slideshowheight = highest image height
+      
+      } else if (self.$images && self.$images.length) { // no scaling, slideshowheight = highest image height
+        
         var newMaxHeight = 0;
         self.$images.each(function() { // TODO: for no-image slideshows
           newMaxHeight = Math.max($(this).innerHeight(), newMaxHeight);
+          // console.log(newMaxHeight);
         });
         self.setSlideshowHeight(newMaxHeight);
       }
 
-      self.preloadSlides();
-      self.centerPosition();
+      if (self.$images && self.$slides.length > 1) {
 
-      if (self.options.autoplay) {
-        self.autoplaying = self.autoplay();
+        self.preloadSlides();
+        self.centerPosition();
+
+        if (self.options.autoplay) {
+          self.autoplaying = self.autoplay();
+        }
+      } else if (self.$images && self.$slides.length == 1) {
+        // call init here for 1 slide shows, as no preload happens
+        setTimeout( function() {
+          self.$slides.addClass('active');
+        }, 0);
+        
+        // self.$wrapper.css('opacity', 1);
+        self.options.afterInit.call(this);
+      } else {
+        console.log('No slides found');
       }
-
 
     },
 
@@ -115,58 +138,145 @@ if ( typeof Object.create != 'function') {
 
       var self = this;
 
-      if (self.$images.length) {
-        var maxWidth = Math.min(self.$viewport.innerWidth(), self.options.maxSlideWidth);
-        var maxHeight = self.options.maxSlideHeight;
+      var maxWidth;
+      var maxHeight;
+      var slideshowHeight;
+
+      if (self.options.maxWidth > 0) {
+        // set width to viewportwidth or maxWidth (if smaller)
+        maxWidth = Math.min(self.$viewport.innerWidth(), self.options.maxWidth);
+      } else {
+        maxWidth = self.$viewport.innerWidth();
+      }
+
+      // smallest scaling mode: slideshow height and slide height are defined by smallest image height (or maxHeight if smaller)
+      if (self.options.scaleTo === "smallest") { 
+        
+        if (self.options.maxHeight > 0) {
+          maxHeight = self.options.maxHeight;
+        } else {
+          maxHeight = 10000000; // a.k.a infinity
+        }
+
         var scalefactor = 1.0;
-
-        // console.log('maxWidth: ' + maxWidth);
-        // console.log('maxHeight: ' + maxHeight);
-
+  
         self.$images.each(function() {
-          scalefactor = Math.min(1.0, maxWidth / $(this).naturalWidth()); // if image wider than allowed...
-          maxHeight = Math.min( maxHeight, Math.ceil($(this).naturalHeight() * scalefactor));
+          if (!$(this).is('img')) {
+            // test: only div slides
+          } else {
+            scalefactor = Math.min(1.0, maxWidth / $(this).naturalWidth()); // if image wider than viewport or maxWidth...
+            maxHeight = Math.min( maxHeight, Math.ceil($(this).naturalHeight() * scalefactor));
+          }
+          
         });
 
-        self.setSlideshowHeight(maxHeight);
+        slideshowHeight = maxHeight;
+        
+        self.setSlideshowHeight(slideshowHeight);
 
-        // unused scaling function - what is intention - investigate
-        // if (self.$slides.find('img').length > 0) {
-        //   self.$images.each(function() {
-        //     if ($(this).naturalHeight() > maxHeight) {
-        //       $(this).css({
-        //         width   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
-        //         height  : maxHeight
-        //       });
-        //     } else if ($(this).naturalWidth() > maxWidth) {
-        //       $(this).css({
-        //         width   : maxWidth,
-        //         height  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
-        //       });
-        //     } else {
-        //       $(this).css({
-        //         width   : 'auto',
-        //         height  : maxHeight
-        //       });
-        //     }
-        //   });
-        // }
+        // scale images ---- TODO: possibly refactor with ratio --- validate condition calls for smaller images
 
-        // set new leftPosition executed in scrollWrapper // TODO: does not work on load as active slide is not set yet! do we need this to work?
-        // self.refreshSlides();
-        var currentactiveindex = self.$elem.find('.skidder-slide').index(self.$elem.find('.skidder-slide').filter('.active'));
-        // console.log(currentactiveindex);
-        // console.log(self.leftPosition);
-        self.leftPosition = 0;
-        for (i = 0; i < currentactiveindex; i++ ) {
-          self.leftPosition -= self.$slides.eq(i).innerWidth();
+        self.$images.each(function() {
+          if ($(this).naturalHeight() > maxHeight) {
+            // console.log('1');
+            $(this).css({
+              'width'   : Math.ceil($(this).naturalWidth() * (maxHeight / $(this).naturalHeight() )) + 2, // + 2 is lazy correction for rounding problem
+              'height'  : maxHeight
+            });
+            $(this).closest('.skidder-slide').css({
+              'width'   : (self.options.spaceSlides ? maxWidth : 'auto'),
+            });
+          
+          } else if ($(this).naturalWidth() > maxWidth) {
+            // console.log('2');
+            $(this).css({
+              'width'   : maxWidth,
+              'height'  : Math.ceil($(this).naturalHeight() * (maxWidth / $(this).naturalWidth() )) + 2 // + 2 is lazy correction for rounding problem
+            });
+          
+          } else {
+            // console.log('3');
+            $(this).css({
+              'width'   : ($(this).is('img') ?  'auto' : maxWidth ),
+              'height'  : maxHeight,
+              'margin-left'  : 'auto',
+              'margin-right'  : 'auto',
+              'display' : 'block',
+            });
+          }
+        });
+
+
+      // ratio scaling mode: slideshow height defined by given ratio (or maxheight if smaller)
+      } else if (self.options.scaleTo.constructor === Array) {
+      
+        maxHeight = maxWidth / self.options.scaleTo[0] * self.options.scaleTo[1];
+
+        if (self.options.maxHeight > 0) {
+          // with scaleTo ratio maxheight crops images (unless preservePortrait)
+          slideshowHeight = Math.min(maxHeight, self.options.maxHeight);
+        } else {
+          slideshowHeight = maxHeight
         }
-        // console.log(self.leftPosition);
-        if (self.options.transition == "slide") {
-          self.$wrapper.css('left', self.leftPosition);
-        }
 
+        self.setSlideshowHeight(slideshowHeight);
+        
+        // scale images
+        self.$images.each(function() { 
+          if (!$(this).is('img')) {
+            // element is imageless slide
+            $(this).css({
+              'width'   : maxWidth,
+              'height'  : '100%',
+              'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
+            });
+          } else if (($(this).naturalWidth() / $(this).naturalHeight()) >= self.options.scaleTo[0] / self.options.scaleTo[1]) {
+            // wider than ratio: size to maxHeight, will be cropped left + right
+            $(this).css({
+              'width'   : 'auto',
+              'height'  : maxHeight,
+              'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
+            });
+          } else {
+            // less wide than ratio
+            if (self.options.preservePortrait) {
+              // fit
+              $(this).css({
+                'width'   : 'auto',
+                'height'  : slideshowHeight,
+                'margin-left'  : 'auto',
+                'margin-right'  : 'auto',
+                'display' : 'block',
+              });
+              $(this).closest('.skidder-slide').css({
+                'width'   : (self.options.spaceSlides ? maxWidth : 'auto'),
+              });
+            } else {
+              // cover
+              $(this).css({
+                'width'   : maxWidth,
+                'height'  : 'auto',
+                'margin-top': (maxHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
+              });
+            }
+          }
+        });
       }
+
+      // set new leftPosition executed in scrollWrapper // TODO: does not work on load as active slide is not set yet! do we need this to work?
+      // self.refreshSlides();
+      var currentactiveindex = self.$elem.find('.skidder-slide').index(self.$elem.find('.skidder-slide').filter('.active'));
+      // console.log(currentactiveindex);
+      // console.log(self.leftPosition);
+      self.leftPosition = 0;
+      for (i = 0; i < currentactiveindex; i++ ) {
+        self.leftPosition -= self.$slides.eq(i).innerWidth();
+      }
+      // console.log(self.leftPosition);
+      if (self.options.transition == "slide") {
+        self.$wrapper.css('left', self.leftPosition);
+      }
+
     },
 
     preloadSlides: function() {
@@ -174,13 +284,16 @@ if ( typeof Object.create != 'function') {
       var self = this;
       var $activeslide = self.$slides.eq(0);
       var slidesTotalWidth = 0;
+
       if (self.$pager && self.$pager.length) {
         self.$pagerdots = self.$pager.find(self.options.pagingElement);
       }
 
 
       for (i = 0; i < self.$slides.length; i++ ) {
+        // establish total width of wrapper
         slidesTotalWidth += self.$slides.eq(i).innerWidth();
+        // append pager
         if ((self.touchdevice || self.options.paging) && self.$slides.length > 1 && (self.$pagerdots.length < self.$slides.length)) {
           self.$pager.append('<div class="' + self.options.pagingElement.replace('.', '') +  '"></div>');
         }
@@ -243,10 +356,10 @@ if ( typeof Object.create != 'function') {
         self.addEventHandlers();
       }
 
-      self.$wrapper.css('opacity', 1);
+      // self.$wrapper.css('opacity', 1);
 
       if ( $.isFunction( self.options.afterInit ) ) {
-         self.options.afterInit.call(this);
+        self.options.afterInit.call(this);
       }
 
     },
@@ -595,7 +708,6 @@ if ( typeof Object.create != 'function') {
         };
 
         if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
-          // console.log(self.$wrapper.css('transition'));
           window.setTimeout(function() {
             var speedstring = "" + (self.options.speed/1000) + "s";
             self.$wrapper.css({
@@ -653,8 +765,8 @@ if ( typeof Object.create != 'function') {
       var self = this;
 
       if (self.options.leftaligned) {
-        // self.$wrapper.css('margin-left', (self.$viewport.innerWidth() - 940)/2 -35); // TODO
-        self.$wrapper.css('margin-left', Math.max(0, self.$viewport.innerWidth() - self.options.maxSlideWidth)/2);
+        // self.$wrapper.css('margin-left', (self.$viewport.innerWidth() - 940)/2 -35); // TODO!!!!!!
+        self.$wrapper.css('margin-left', Math.max(0, self.$viewport.innerWidth() - self.options.maxWidth)/2);
       } else {
         var leftmargin = (self.$viewport.innerWidth() - self.$slides.filter('.active').innerWidth())/2;
         self.$wrapper.css({
@@ -666,7 +778,7 @@ if ( typeof Object.create != 'function') {
     setSlideshowHeight: function(newMaxHeight) {
       var self = this;
       // note: skidder-clickelements don't need to be sized if it weren't for #%@&% IE8
-      self.$elem.add(self.$viewport).add(self.$wrapper).add(self.$viewport.find('.skidder-clickelement')).css('height', newMaxHeight);
+      self.$elem.add(self.$viewport).add(self.$wrapper).add(self.$slides).add(self.$viewport.find('.skidder-clickelement')).css('height', newMaxHeight);
     },
 
     refreshSlides: function() {
@@ -676,10 +788,16 @@ if ( typeof Object.create != 'function') {
 
     refreshImages: function() {
       var self = this;
-      self.$images = self.$slides.find('img'); // find images
-      if (!self.$images.length) {
-        self.$images = self.$slides; // if no images use slides
-      }
+      self.$images = $();
+
+      self.$slides.each(function() {
+        // if  slide has image, add image, else add slide
+        if ($(this).has('img').length > 0) {
+          self.$images = self.$images.add($(this).find('img').eq(0)); // perhaps exempt noScaleClass here 
+        } else {
+          self.$images = self.$images.add($(this));
+        }
+      });
     },
 
     resize: function() {
@@ -687,7 +805,7 @@ if ( typeof Object.create != 'function') {
       var self = $(this).data('skidder');
 
       if (self && self.options ) { // make sure skidder has been attached for ie8, who fires resize on page load
-        if (self.options.scaleSlides) {
+        if (self.$images && self.$images.length && self.options.scaleSlides) {
           self.scaleSlides();
         }
         self.centerPosition();
@@ -741,11 +859,16 @@ if ( typeof Object.create != 'function') {
   };
 
   $.fn.skidder.options = {
-    slideClass      : '.slide',
-    animationType   : 'animate',
+    slideClass      : ".slide",
+    imageClass      : "",
+    animationType   : "css",
     scaleSlides     : true,
-    maxSlideWidth   : 800,
-    maxSlideHeight  : 500,
+    maxWidth        : 800,
+    maxHeight       : 500,
+    scaleTo         : "smallest",  
+    preservePortrait: false,
+    spaceSlides     : false,
+    noScaleClass    : ".skidder-no-scale",
     paging          : true,
     pagingWrapper   : ".skidder-pager",
     pagingElement   : ".skidder-pager-dot",
