@@ -1,4 +1,4 @@
-/* Skidder 0.2.7 - a jQuery slideshow plugin
+/* Skidder 0.2.8 - a jQuery slideshow plugin
  * Georg Lauteren for null2.net
  * twitter.com/_gl03
  * Contributor: Maja Komel
@@ -8,6 +8,7 @@
  * 0.2.5 afterResize callback
  * 0.2.6 fixed swiping
  * 0.2.7 added scaleTo and preservePortrait options, renamed maxWidth and maxheight options, support for non-image slides 
+ * 0.2.8 rewrite of CSS timing using transitionend and rAF
  */
 
 if ( typeof Object.create != 'function') {
@@ -17,6 +18,33 @@ if ( typeof Object.create != 'function') {
     return new F();
   }
 }
+
+// requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
+(function() {
+  var lastTime = 0;
+  var vendors = ['ms', 'moz', 'webkit', 'o'];
+  for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+    window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
+    window.cancelAnimationFrame = window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
+  }
+
+  if (!window.requestAnimationFrame) {
+    window.requestAnimationFrame = function(callback, element) {
+      var currTime = new Date().getTime();
+      var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+      var id = window.setTimeout(function() { callback(currTime + timeToCall); }, timeToCall);
+      lastTime = currTime + timeToCall;
+      return id;
+    }
+  }
+
+  if (!window.cancelAnimationFrame) {
+    window.cancelAnimationFrame = function(id) {
+      clearTimeout(id);
+    };
+  }
+}());
+
 
 (function($, window, document, undefined) {
 
@@ -44,6 +72,11 @@ if ( typeof Object.create != 'function') {
 
       // merge options
       self.options = $.extend( {},  $.fn.skidder.options, options);
+
+      if(!self.supportsTransitions()) {
+        self.options.animationType = 'animate';
+      }
+
 
       // // suport deprecated options 
       // if (self.options.maxWidth) self.options.maxWidth ||= self.options.maxWidth;
@@ -317,13 +350,7 @@ if ( typeof Object.create != 'function') {
           });
 
           if (!self.touchdevice && self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
-            window.setTimeout(function() {
-              var speedstring = "" + (self.options.speed/1000) + "s";
-              self.$wrapper.css({
-                '-webkit-transition': 'left ' + speedstring + ' ease-out',
-                'transition': 'left ' + speedstring + ' ease-out'
-              });
-            },0);
+            window.requestAnimationFrame(self.applyWrapperSlideTransition());
           }
 
           self.refreshSlides();
@@ -362,6 +389,27 @@ if ( typeof Object.create != 'function') {
         self.options.afterInit.call(this);
       }
 
+    },
+
+    applyWrapperSlideTransition: function() {
+      var self = this;
+      return function() {
+        var speedstring = "" + (self.options.speed/1000) + "s";
+        self.$wrapper.css({
+          '-webkit-transition': 'left ' + speedstring + ' ease-out',
+          'transition': 'left ' + speedstring + ' ease-out'
+        });
+      }
+    },
+
+    removeWrapperSlideTransition: function() {
+      var self = this;
+      return function() {
+        self.$wrapper.css({
+          '-webkit-transition': 'none',
+          'transition': 'none'
+        });
+      }
     },
 
     addEventHandlers: function() {
@@ -411,10 +459,7 @@ if ( typeof Object.create != 'function') {
         self.initialY = e.originalEvent.changedTouches[0].clientY;
         self.touchtime = new Date().getTime();
 
-        self.$wrapper.css({
-          '-webkit-transition': 'none',
-          'transition': 'none'
-        });
+        self.removeWrapperSlideTransition()();
 
       } else if (e.type == "touchmove") {
 
@@ -451,11 +496,7 @@ if ( typeof Object.create != 'function') {
             $activedot.is(':first-child') ? self.$pagerdots.eq(-1).addClass('active') : $activedot.prev().addClass('active');
           }
           if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
-            var speedstring = "" + (self.options.speed/1000) + "s";
-            self.$wrapper.css({
-              '-webkit-transition': 'left ' + speedstring + ' ease-out',
-              'transition': 'left ' + speedstring + ' ease-out'
-            });
+            self.applyWrapperSlideTransition()();
           }
           self.transitionWrapper('prev', -1, self.totaldiffX, 'easeOutSkidder');
           if ( $.isFunction( self.options.afterSliding ) ) {
@@ -472,11 +513,7 @@ if ( typeof Object.create != 'function') {
             $activedot.is(':last-child') ? self.$pagerdots.eq(0).addClass('active') : $activedot.next().addClass('active');
           }
           if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
-            var speedstring = "" + (self.options.speed/1000) + "s";
-            self.$wrapper.css({
-              '-webkit-transition': 'left ' + speedstring + ' ease-out',
-              'transition': 'left ' + speedstring + ' ease-out'
-            });
+            self.applyWrapperSlideTransition()();
           }
           self.transitionWrapper('next', 1, self.totaldiffX, 'easeOutSkidder');
           if ( $.isFunction( self.options.afterSliding ) ) {
@@ -494,24 +531,13 @@ if ( typeof Object.create != 'function') {
           if (self.options.animationType == 'animate') {
             self.$wrapper.animate({
               'left': self.leftPosition
-            }, self.options.speed );
+            }, self.options.speed, self.removeWrapperSlideTransition() );
 
           } else if (self.options.animationType == 'css'){
-            var speedstring = "" + (self.options.speed/1000) + "s";
-            self.$wrapper.css({
-              'left': self.leftPosition,
-              '-webkit-transition': 'left ' + speedstring + ' ease-out',
-              'transition': 'left ' + speedstring + ' ease-out'
-            });
+            self.applyWrapperSlideTransition()();
+            self.$wrapper.on("transitionend", function(e) { if ($(e.target).is(self.$wrapper)) { self.removeWrapperSlideTransition() } } );
+            self.$wrapper.css({ 'left': self.leftPosition});
           }
-
-          window.setTimeout(function() {
-            // self.$wrapper.css('left', self.leftPosition);
-            self.$wrapper.css({
-              '-webkit-transition': 'none',
-              'transition': 'none'
-            });
-          }, self.options.speed);
 
           if (self.options.autoplay && self.options.autoplayResume) {
             self.autoplaying = self.autoplay();
@@ -572,7 +598,6 @@ if ( typeof Object.create != 'function') {
     },
 
     clickHandlerPaging: function(e) {
-      // console.log('page');
       var self = this;
       var activeindex = self.$pagerdots.index(self.$pagerdots.filter('.active'));
       var jumpindex = self.$pagerdots.index($(e.target));
@@ -591,6 +616,11 @@ if ( typeof Object.create != 'function') {
       $toSlide.addClass('active').removeClass('disengage');
 
       self.removeEventHandlers();
+
+      if (self.touchdevice && self.options.swiping) {
+        self.applyWrapperSlideTransition()();
+      }
+
       self.transitionWrapper(direction, jumpsize);
     },
 
@@ -636,6 +666,7 @@ if ( typeof Object.create != 'function') {
     },
 
     scrollWrapper: function(direction, jumpsize, dragoffset, easingfunction) {
+
       var self = this;
       var touchoffset = dragoffset || 0;
       var easing = easingfunction || 'swing';
@@ -652,7 +683,6 @@ if ( typeof Object.create != 'function') {
           for (var x=0; x<self.$slides.length-1; x++) {
             xoffset -= self.$slides.eq(x).innerWidth()*-1;
           }
-        // TODO: rewrite with jumpsize, ditch direction
         } else if (self.options.leftaligned) {
           xoffset = (jumpsize > 0 ? (-$disengagingSlide.innerWidth() * jumpsize) : (-self.$slides.filter('.active').innerWidth() * jumpsize));
 
@@ -671,67 +701,78 @@ if ( typeof Object.create != 'function') {
 
       // move slide and callback
 
-      var callbackfunction = function() {
+      var callbackfunction = function(e) {
 
-        // reapply click handlers
-        self.addEventHandlers();
-        self.refreshSlides();
-        self.refreshImages();
-
-        // reorder slides
-        if (jumpsize > 0 && self.options.cycle) {
-          self.leftPosition += self.$slides.eq(0).innerWidth()
-          self.$wrapper.css('left', self.leftPosition );
-          self.$slides.eq(0).appendTo(self.$wrapper);
-        } else if (jumpsize < 0 && self.options.cycle) {
-          self.leftPosition -= self.$slides.eq(-1).innerWidth()
-          self.$wrapper.css('left', self.leftPosition);
-          self.$slides.eq(-1).prependTo(self.$wrapper);
+        // turn off transition before reordering
+        if (self.options.animationType == 'css') {
+          self.$wrapper.off();
+          self.removeWrapperSlideTransition()();
         }
 
-        // handle jumpback option
-        if (self.options.jumpback) {
-          if (self.$slides.eq(-1).hasClass('active')) {
-            self.$clickwrappers.find('.skidder-next').addClass('jumpback');
-          } else {
-            self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
+        function reorderDOM(timestamp) {
+          // reapply click handlers
+          var $slidestomove = $();
+          self.addEventHandlers();
+          self.refreshSlides();
+          self.refreshImages();
+
+          self.$slides.removeClass('disengage');
+
+          // reorder slides
+          if (jumpsize > 0 && self.options.cycle) {
+            for (x = 0; x < jumpsize; x++) {
+              self.leftPosition += self.$slides.eq(x).innerWidth();
+              $slidestomove = $slidestomove.add(self.$slides.eq(x));
+            }
+            $slidestomove.appendTo(self.$wrapper);
+            self.$wrapper.css('left', self.leftPosition );
+            
+          } else if (jumpsize < 0 && self.options.cycle) {
+            for (x = -1; x >= jumpsize; x--) {
+              self.leftPosition -= self.$slides.eq(x).innerWidth();
+              $slidestomove = $slidestomove.add(self.$slides.eq(x));
+            }
+            $slidestomove.prependTo(self.$wrapper);
+            self.$wrapper.css('left', self.leftPosition );
           }
+
+          // handle jumpback option
+          if (self.options.jumpback) {
+            if (self.$slides.eq(-1).hasClass('active')) {
+              self.$clickwrappers.find('.skidder-next').addClass('jumpback');
+            } else {
+              self.$clickwrappers.find('.skidder-next').removeClass('jumpback');
+            }
+          }
+
+          if (self.options.autoplay && self.options.autoplayResume) {
+            self.autoplaying = self.autoplay();
+          }
+
+          if (self.options.directionClasses) {
+            self.addLeftAndRightClasses();
+          };
+
+          if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
+            window.requestAnimationFrame(self.applyWrapperSlideTransition());
+          } 
         }
 
-        if (self.options.autoplay && self.options.autoplayResume) {
-          self.autoplaying = self.autoplay();
-        }
+        window.requestAnimationFrame(reorderDOM);
+      }
 
-        self.$slides.removeClass('disengage');
-        if (self.options.directionClasses) {
-          self.addLeftAndRightClasses();
-        };
-
-        if (self.options.animationType == 'css') { // for touch, css transitions are only active for actual scrolling
-          window.setTimeout(function() {
-            var speedstring = "" + (self.options.speed/1000) + "s";
-            self.$wrapper.css({
-              '-webkit-transition': 'left ' + speedstring + ' ease-out',
-              'transition': 'left ' + speedstring + ' ease-out'
-            });
-          }, 0);
-        }
-      };
+      // actual scrolling
 
       if (self.options.animationType == 'animate') {
         self.$wrapper.animate({
           'left': self.leftPosition
         }, self.options.speed, easing, callbackfunction);
+
       } else if (self.options.animationType == 'css') {
+        self.$wrapper.on("transitionend", function(e) { if ($(e.target).is(self.$wrapper)) { callbackfunction(e) } } );
         self.$wrapper.css('left', self.leftPosition);
-        window.setTimeout(function() {
-          self.$wrapper.css({
-            '-webkit-transition': 'none',
-            'transition': 'none'
-          });
-          callbackfunction();
-        }, self.options.speed);
       }
+
     },
 
     fadeWrapper: function(direction, jumpsize) {
@@ -801,7 +842,6 @@ if ( typeof Object.create != 'function') {
     },
 
     resize: function() {
-      // console.log('resize');
       var self = $(this).data('skidder');
 
       if (self && self.options ) { // make sure skidder has been attached for ie8, who fires resize on page load
@@ -815,7 +855,6 @@ if ( typeof Object.create != 'function') {
       }
     },
     stopAutoplay: function() {
-      // console.log('stopAutoplay');
       var self = $(this).data('skidder');
 
       if (self && self.options ) { // make sure skidder has been attached for ie8, who fires resize on page load
@@ -838,6 +877,11 @@ if ( typeof Object.create != 'function') {
           $(elem).addClass('right-from-active');
         }
       });
+    },
+    supportsTransitions: function() {
+      var s = document.createElement('p').style;
+      var supportsTransitions = 'transition' in s || 'WebkitTransition' in s ;
+      return supportsTransitions; 
     }
   }
 

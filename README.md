@@ -55,7 +55,7 @@ It is highly recommended to debounce this to save some trees, e.g. with Paul Iri
 
 ###Transitions 
 
-Skidder supports two modes of animating the slide transition ("animationType" option): CSS and jQuery animate. Using CSS mode is recommended for performance reasons.
+Skidder supports two modes of animating the slide transition ("animationType" option): CSS and jQuery animate. Using CSS mode is recommended for performance reasons. CSS obviously requires that the browser support CSS transitions, if not, Skidder will switch to 'animate' mode. Both modes require requestAnimationFrame, which is polyfilled for older browsers.
 
 Skidder offers two types of transitions ("transition" option): slide and fade. Fade always animates using CSS. Regardless of the transition selected, touch devices will always use the 'slide' transition, unless swiping is set to false. Note that for now the fade transition requires images of equal size.
 
@@ -121,6 +121,10 @@ For non-scaling non-image slides (i.e. slides without an explicit img tag), make
 - ~~callback functions~~
 - stepsize option for larger jumps 
 - lazy loading
+- option for custom easing functions
+- allow to move multiple slides in one swipe
+- <=IE9 does not support CSS transitions: css mode should fall back to animate for these browsers
+- polyfill rAF
 - test with scaling no-image slides that contain a not-scaling image, possibly:
 
 | noScaleClass    | Set this on images contained within the slide div that you don't want to be scaled. Please include leading ".". _Default: ".skidder-no-scale"_     |
@@ -130,10 +134,6 @@ For non-scaling non-image slides (i.e. slides without an explicit img tag), make
 - ~~at the moment it's not possible to mix img and non-img slides~~
 - ~~slides containing image tags other than the background image will break scaling~~ 
 - fade transition requires images of equal size (TODO: rewrite center function)
-
-##Bugs
-scaleSlides false causes slide divs to be misaligned
-slides may jump in firefox when animationType is set to css
  
 ##Credits and license
 
@@ -141,6 +141,7 @@ slides may jump in firefox when animationType is set to css
 Georg Lauteren for null2
 [georg.null2.net](http://georg.null2.net)
 [twitter.com/_gl03](http://twitter.com/_gl03)
+requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
 
 ###License
 Licensed under the [MIT License](http://opensource.org/licenses/MIT)
