@@ -187,9 +187,7 @@ if ( typeof Object.create != 'function') {
       } else {
         maxWidth = self.$viewport.innerWidth();
       }
-
-      console.log(maxWidth);
-
+      
       // smallest scaling mode: slideshow height and slide height are defined by smallest image height (or maxHeight if smaller)
       if (self.options.scaleTo === "smallest") { 
         
