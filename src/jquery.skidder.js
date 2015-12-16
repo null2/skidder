@@ -10,6 +10,7 @@
  * 0.2.7 added scaleTo and preservePortrait options, renamed maxWidth and maxheight options, support for non-image slides 
  * 0.2.8 rewrite of CSS timing using transitionend and rAF
  * 0.2.9 lazy-loading
+ * 0.2.91 preservePortrait only for portrait, not < than scale ratio
  */
 
 if ( typeof Object.create != 'function') {
@@ -187,6 +188,8 @@ if ( typeof Object.create != 'function') {
         maxWidth = self.$viewport.innerWidth();
       }
 
+      console.log(maxWidth);
+
       // smallest scaling mode: slideshow height and slide height are defined by smallest image height (or maxHeight if smaller)
       if (self.options.scaleTo === "smallest") { 
         
@@ -248,7 +251,9 @@ if ( typeof Object.create != 'function') {
       // ratio scaling mode: slideshow height defined by given ratio (or maxheight if smaller)
       } else if (self.options.scaleTo.constructor === Array) {
       
-        maxHeight = maxWidth / self.options.scaleTo[0] * self.options.scaleTo[1];
+        // maxHeight = maxWidth / self.options.scaleTo[0] * self.options.scaleTo[1];
+
+        maxHeight = self.options.scaleTo[1] / self.options.scaleTo[0] * maxWidth;
 
         if (self.options.maxHeight > 0) {
           // with scaleTo ratio maxheight crops images (unless preservePortrait)
@@ -270,20 +275,23 @@ if ( typeof Object.create != 'function') {
             $(this).css({
               'width'   : maxWidth,
               'height'  : '100%',
-              // 'margin-top': (slideshowHeight - (maxWidth / imagewidth * imageheight)) / 2
             });
           } else if ((imagewidth / imageheight) >= self.options.scaleTo[0] / self.options.scaleTo[1]) {
             // wider than ratio: size to maxHeight, will be cropped left + right
-            // console.log('wider');
             $(this).css({
               'width'   : 'auto',
               'height'  : maxHeight,
-              // 'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2 // why is this wrong?
-              'margin-top': 0
+            });
+
+          } else if ((imagewidth / imageheight) < self.options.scaleTo[0] / self.options.scaleTo[1] && imagewidth > imageheight) {
+            // less wide than ratio but landscape: will be cropped top & bottom
+            $(this).css({
+              'width'   : maxWidth,
+              'height'  : 'auto',
+              'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
             });
           } else {
-            // less wide than ratio
-            // console.log('taller');
+            // portrait
             if (self.options.preservePortrait) {
               // fit
               $(this).css({
