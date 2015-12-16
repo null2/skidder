@@ -1,6 +1,6 @@
 #Skidder
 
-A jQuery slideshow plug-in that supports centering, swiping and responsive scaling.
+A flexible jQuery slideshow plug-in that supports centering, swiping and responsive scaling.
 
 ##Features
 - optional paging
@@ -51,7 +51,13 @@ Bind this call to your resize, orientationchange, whatever event:
 $('.slideshow').skidder('resize');
 ```
 
-It is highly recommended to debounce this to save some trees, e.g. with Paul Irish's [smartresize](http://www.paulirish.com/2009/throttled-smartresize-jquery-event-handler/).
+It is highly recommended to debounce this to save some trees, e.g. with Paul Irish's [smartresize](http://www.paulirish.com/2009/throttled-smartresize-jquery-event-handler/), which you can use like this:
+
+```js
+  $(window).smartresize(function(){
+    $('.slideshow').skidder('resize');
+  });
+```
 
 ###Transitions 
 
@@ -64,13 +70,17 @@ Skidder offers two types of transitions ("transition" option): slide and fade. F
 Skidder has a number of options to deal with various image sizes, desired viewport layout, and responsivness:
 
 - 'scaleSlides' determines if slides are displayed as they are (styled only via css), or if the are scaled programmatically (via inline css properties) to fit certain dimensions. If you just need a simple slideshow with equally sized images you can turn off scaling altogether and handle responsiveness via css if needed. If you have to deal with various image formats or mix image- and non-image slides, scaling will help you out. It uses the following options:
-- 'scaleTo' can be either "smallest", or an array consisting of two numbers [x, y]. "smallest" will scale all your images to the height of your smallest (ie. least tall) image, as well as set the slideshow's height accordingly. Take note that adding one 5px tall image to a slideshow will render the entire slideshow 5px tall. an array of two numbers (e.g. [16, 9]) will determine the aspect ratio of the lide show, ie. its height relative to its given width. images will be scaled to fill the viewport, ie. for wider images left and right edges will be hidden, top and bottom edges for taller images.   
+- 'scaleTo' can be either "smallest", or an array consisting of two numbers [x, y]. "smallest" will scale all your images to the height of your smallest (ie. least tall) image, as well as set the slideshow's height accordingly. Take note that adding one 5px tall image to a slideshow will render the entire slideshow 5px tall. an array of two numbers (e.g. [16, 9]) will determine the aspect ratio of the slide show, ie. its height relative to its given width. images will be scaled to fill the viewport, ie. for wider images left and right edges will be hidden, top and bottom edges for taller images.   
 -  there are times when you need to keep the bottom and top edges of tall images. that's what "preservePortrait' is for: if set, any image less wide than the specified ration will be sized to fit. 
 - 'maxWidth' and 'maxHeight' are here to limit the dimension of the slide show. If set to "none" or 0, no limitation is applied in that direction.
 
 Scaling always manipulates the first image in the slide element. If you want to include more images in a slide (for overlays etc), make sure to place them after the primary image tag.  
 
 If you are using image-less divs without scaling, you will have to set the height of the slides with css, or 
+
+###Lazy Loading
+
+
 
 ###Styling
 
@@ -83,6 +93,9 @@ For non-scaling non-image slides (i.e. slides without an explicit img tag), make
 | ------------- | ------------- |
 | slideClass      | Class of the slide element. Please include leading ".". _Default: ".slide"_     |
 | animationType   | skidder supports css animations and jquery animate ones. Possible values 'animate', 'css'  _Default: 'animate'_     |
+| lazyLoad        | _Default: false_     |
+| lazyLoadAutoInit | _Default: true_     |
+| lazyLoadWindow  | _Default: 1_ |
 | scaleSlides     | Scales slides (via css) to uniform values, depending on maxWidth, maxHeight, and scaleTo settings  Requires images! _Default: true_     |
 | scaleTo         | Defines the scaling mode of scaleSlides. At the moments there are two modes: Scale to smallest, and ratio (responsive) mode. Possible values: "smallest" - height of the least tall image determines height of slideshow. _[x, y]_ – an array of two number defining a ratio for the slide show. _Default: "smallest"_ |
 | maxWidth        | Limit width of slideshow to this value. Set to 0 or "none" to not limit. _Default: 800_   |
@@ -108,23 +121,24 @@ For non-scaling non-image slides (i.e. slides without an explicit img tag), make
 
 
 ##Roadmap
+- ~~lazy loading~~
+- outerPaging option (find paging element in next sibling element to slideshow)
 - ~~use requestAnimationFrame or optional pure css transitions to improve performance~~
 - test and debug leftalign (align to viewport or maxSlideWidth?)/ non-cycle (disable event handlers for first and last slide) / jumpback options
 - adapt swipehandler to nocycle
-- make click cancel autoplay
+- ~~make click cancel autoplay~~
 - DRY click/swipe/autoplay events
 - fold (optional) smartresize into skidder
 - ~~proper swiping~~
-- properly bottom-align paging
+- better bottom-align paging
 - adapt speed to slide width
-- ~~diable controls, paging and autoplay for less than 2 images~~
+- ~~disable controls, paging and autoplay for less than 2 images~~
 - ~~callback functions~~
-- stepsize option for larger jumps 
-- lazy loading
+- stepsize option for larger jumps (best responsive)
 - option for custom easing functions
 - allow to move multiple slides in one swipe
 - <=IE9 does not support CSS transitions: css mode should fall back to animate for these browsers
-- polyfill rAF
+- ~~polyfill rAF~~
 - test with scaling no-image slides that contain a not-scaling image, possibly:
 
 | noScaleClass    | Set this on images contained within the slide div that you don't want to be scaled. Please include leading ".". _Default: ".skidder-no-scale"_     |

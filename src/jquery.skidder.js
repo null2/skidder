@@ -1,4 +1,4 @@
-/* Skidder 0.2.8 - a jQuery slideshow plugin
+/* Skidder 0.2.9 - a jQuery slideshow plugin
  * Georg Lauteren for null2.net
  * twitter.com/_gl03
  * Contributor: Maja Komel
@@ -9,6 +9,7 @@
  * 0.2.6 fixed swiping
  * 0.2.7 added scaleTo and preservePortrait options, renamed maxWidth and maxheight options, support for non-image slides 
  * 0.2.8 rewrite of CSS timing using transitionend and rAF
+ * 0.2.9 lazy-loading
  */
 
 if ( typeof Object.create != 'function') {
@@ -123,7 +124,7 @@ if ( typeof Object.create != 'function') {
             self.$pager = self.$viewport.find(self.options.pagingWrapper);
           }
         }
-      }
+      } 
       
       self.leftPosition = 0;
 
@@ -154,6 +155,11 @@ if ( typeof Object.create != 'function') {
           self.autoplaying = self.autoplay();
         }
       } else if (self.$images && self.$slides.length == 1) {
+
+        if (self.options.lazyLoad && self.options.lazyLoadAutoInit) {
+          self.lazyLoadSlides();
+        }
+
         // call init here for 1 slide shows, as no preload happens
         setTimeout( function() {
           self.$slides.addClass('active');
@@ -169,8 +175,7 @@ if ( typeof Object.create != 'function') {
 
     scaleSlides: function() {
 
-      var self = this;
-
+      var self = $(this).data('skidder') || this;
       var maxWidth;
       var maxHeight;
       var slideshowHeight;
@@ -253,25 +258,32 @@ if ( typeof Object.create != 'function') {
         }
 
         self.setSlideshowHeight(slideshowHeight);
-        
+
         // scale images
         self.$images.each(function() { 
+
+          var imagewidth = $(this).naturalWidth() || $(this).closest('.skidder-slide').attr('data-skidder-width');
+          var imageheight = $(this).naturalHeight() || $(this).closest('.skidder-slide').attr('data-skidder-height');
+          
           if (!$(this).is('img')) {
             // element is imageless slide
             $(this).css({
               'width'   : maxWidth,
               'height'  : '100%',
-              'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
+              // 'margin-top': (slideshowHeight - (maxWidth / imagewidth * imageheight)) / 2
             });
-          } else if (($(this).naturalWidth() / $(this).naturalHeight()) >= self.options.scaleTo[0] / self.options.scaleTo[1]) {
+          } else if ((imagewidth / imageheight) >= self.options.scaleTo[0] / self.options.scaleTo[1]) {
             // wider than ratio: size to maxHeight, will be cropped left + right
+            // console.log('wider');
             $(this).css({
               'width'   : 'auto',
               'height'  : maxHeight,
-              'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
+              // 'margin-top': (slideshowHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2 // why is this wrong?
+              'margin-top': 0
             });
           } else {
             // less wide than ratio
+            // console.log('taller');
             if (self.options.preservePortrait) {
               // fit
               $(this).css({
@@ -289,7 +301,7 @@ if ( typeof Object.create != 'function') {
               $(this).css({
                 'width'   : maxWidth,
                 'height'  : 'auto',
-                'margin-top': (maxHeight - (maxWidth / $(this).naturalWidth() * $(this).naturalHeight())) / 2
+                'margin-top': (maxHeight - (maxWidth / imagewidth * imageheight)) / 2
               });
             }
           }
@@ -313,7 +325,6 @@ if ( typeof Object.create != 'function') {
     },
 
     preloadSlides: function() {
-
       var self = this;
       var $activeslide = self.$slides.eq(0);
       var slidesTotalWidth = 0;
@@ -369,6 +380,10 @@ if ( typeof Object.create != 'function') {
 
       $activeslide.addClass('active');
 
+      if (self.options.lazyLoad && self.options.lazyLoadAutoInit ) {
+        self.lazyLoadSlides();
+      }
+
       if (self.options.directionClasses) {
         self.addLeftAndRightClasses();
       };
@@ -380,7 +395,7 @@ if ( typeof Object.create != 'function') {
           self.$pagerdots = self.$pager.find(self.options.pagingElement);
           self.$pagerdots.eq(0).addClass('active');
         }
-        self.addEventHandlers();
+        self.addEventHandlers()();
       }
 
       // self.$wrapper.css('opacity', 1);
@@ -390,6 +405,47 @@ if ( typeof Object.create != 'function') {
       }
 
     },
+
+    lazyLoadSlides: function() {
+
+      var self = $(this).data('skidder') || this;
+      var activeslideindex = self.$slides.index(self.$slides.filter('.active'));
+      var $slidestoload;
+      
+      if (self.$slides.length > 1) {
+        var $slidestoload = self.$slides.eq(activeslideindex);
+        for (llw = 1; llw <= self.options.lazyLoadWindow; lww++) {
+          $slidestoload = $slidestoload.add(self.$slides.eq(activeslideindex-llw), self.$slides.eq(activeslideindex+llw)) 
+        }  
+      } else if (self.$slides.length == 1) {
+        $slidestoload = self.$slides.eq(0);
+      }
+      
+      $slidestoload.each(function() {
+        if (!$(this).hasClass('skidder-loaded') && $(this).attr('data-skidder-src')) {
+          $(this)
+            .prepend("<img class='skidder-loaded' src='" + $(this).attr('data-skidder-src') + "' title='" +  $(this).attr('data-skidder-title') + "' alt='" + $(this).attr('data-skidder-alt') + "' > ")
+            .css({
+              'width'  : 'auto', 
+              'height' : 'auto'
+            })
+            .addClass('skidder-loaded');
+          // wrap in a
+          if ($(this).attr('data-skidder-href')) {
+            $(this).find('.skidder-loaded').wrap("<a href='" + $(this).attr('data-skidder-href') + "'></a>");
+          }
+        }
+      });
+      self.refreshSlides();
+      self.refreshImages();
+      self.scaleSlides();
+      self.centerPosition();
+      self.$slides.find('.skidder-loaded').not('skidder-shown').fadeIn(400).addClass('skidder-shown');
+      if ( $.isFunction( self.options.afterLazyLoad ) ) {
+        self.options.afterLazyLoad.call(this);
+      }
+    
+    }, 
 
     applyWrapperSlideTransition: function() {
       var self = this;
@@ -414,14 +470,16 @@ if ( typeof Object.create != 'function') {
 
     addEventHandlers: function() {
       var self = this;
-      if (self.$slides.length > 1) {
-        if (self.touchdevice || self.options.paging) {
-          self.$pagerdots.on('click touchend', function(e){self.clickHandlerPaging(e)});
-        }
-        if (self.options.swiping && self.touchdevice) {
-          self.$touchwrapper.on('touchstart touchmove touchend', function(e){self.swipeHandler(e)});
-        } else {
-          self.$clickwrappers.on('click', function(e){self.clickHandlerLeftRight(e)});
+      return function() {
+        if (self.$slides.length > 1) {
+          if (self.touchdevice || self.options.paging) {
+            self.$pagerdots.on('click touchend', function(e){self.clickHandlerPaging(e)});
+          }
+          if (self.options.swiping && self.touchdevice) {
+            self.$touchwrapper.on('touchstart touchmove touchend', function(e){self.swipeHandler(e)});
+          } else {
+            self.$clickwrappers.on('click', function(e){self.clickHandlerLeftRight(e)});
+          }
         }
       }
     },
@@ -499,6 +557,9 @@ if ( typeof Object.create != 'function') {
             self.applyWrapperSlideTransition()();
           }
           self.transitionWrapper('prev', -1, self.totaldiffX, 'easeOutSkidder');
+          if (self.options.lazyLoad && self.options.lazyLoadAutoInit ) {
+            self.lazyLoadSlides();
+          }
           if ( $.isFunction( self.options.afterSliding ) ) {
            self.options.afterSliding.call(this);
           }
@@ -516,6 +577,9 @@ if ( typeof Object.create != 'function') {
             self.applyWrapperSlideTransition()();
           }
           self.transitionWrapper('next', 1, self.totaldiffX, 'easeOutSkidder');
+          if (self.options.lazyLoad && self.options.lazyLoadAutoInit ) {
+            self.lazyLoadSlides();
+          }
           if ( $.isFunction( self.options.afterSliding ) ) {
            self.options.afterSliding.call(this);
           }
@@ -590,10 +654,14 @@ if ( typeof Object.create != 'function') {
         }
       }
 
+      if (self.options.lazyLoad && self.options.lazyLoadAutoInit ) {
+        self.lazyLoadSlides();
+      }
+
       // direction is not updateted for edge cases, because action functions don't use it
 
       if ( $.isFunction( self.options.afterSliding ) ) {
-         self.options.afterSliding.call(this);
+        self.options.afterSliding.call(this);
       }
     },
 
@@ -622,6 +690,14 @@ if ( typeof Object.create != 'function') {
       }
 
       self.transitionWrapper(direction, jumpsize);
+
+      if (self.options.lazyLoad && self.options.lazyLoadAutoInit ) {
+        self.lazyLoadSlides();
+      }
+
+      if ( $.isFunction( self.options.afterSliding ) ) {
+        self.options.afterSliding.call(this);
+      }
     },
 
     autoplay: function() {
@@ -647,6 +723,10 @@ if ( typeof Object.create != 'function') {
         }
 
         self.transitionWrapper('next', 1);
+
+        if (self.options.lazyLoad && self.options.lazyLoadAutoInit ) {
+          self.lazyLoadSlides();
+        }
 
         if ( $.isFunction( self.options.afterSliding ) ) {
           self.options.afterSliding.call(this);
@@ -712,7 +792,7 @@ if ( typeof Object.create != 'function') {
         function reorderDOM(timestamp) {
           // reapply click handlers
           var $slidestomove = $();
-          self.addEventHandlers();
+          window.requestAnimationFrame(self.addEventHandlers());
           self.refreshSlides();
           self.refreshImages();
 
@@ -769,7 +849,7 @@ if ( typeof Object.create != 'function') {
         }, self.options.speed, easing, callbackfunction);
 
       } else if (self.options.animationType == 'css') {
-        self.$wrapper.on("transitionend", function(e) { if ($(e.target).is(self.$wrapper)) { callbackfunction(e) } } );
+        self.$wrapper.on("transitionend", function(e) { if ($(e.target).is(self.$wrapper)) { callbackfunction(e) } } ); // has to be on instead one, bacause multiple (bubbling) transition events are fired, and we don't know which is first one
         self.$wrapper.css('left', self.leftPosition);
       }
 
@@ -780,7 +860,7 @@ if ( typeof Object.create != 'function') {
 
       window.clearTimeout(self.autoplaying);
 
-      self.addEventHandlers();
+      self.addEventHandlers()();
 
       // handle jumpback option - TODO: test with fade
       if (self.options.jumpback) {
@@ -809,10 +889,21 @@ if ( typeof Object.create != 'function') {
         // self.$wrapper.css('margin-left', (self.$viewport.innerWidth() - 940)/2 -35); // TODO!!!!!!
         self.$wrapper.css('margin-left', Math.max(0, self.$viewport.innerWidth() - self.options.maxWidth)/2);
       } else {
-        var leftmargin = (self.$viewport.innerWidth() - self.$slides.filter('.active').innerWidth())/2;
-        self.$wrapper.css({
-          'margin-left': leftmargin
-        });
+        if (self.options.lazyLoad) { // dirty fix for Firefox, which responds with crazy values to initial innerWidth polling
+          window.setTimeout(function() {
+            var activeslidewidth = self.$slides.filter('.active').innerWidth() > 0 ? self.$slides.filter('.active').innerWidth() : self.$viewport.innerWidth(); // lazyload doesn't know innerWidth while loading!
+            var leftmargin = (self.$viewport.innerWidth() - activeslidewidth)/2;
+            self.$wrapper.css({
+              'margin-left': leftmargin
+            });
+          }, 100);
+        } else {
+          var activeslidewidth = self.$slides.filter('.active').innerWidth() > 0 ? self.$slides.filter('.active').innerWidth() : self.$viewport.innerWidth(); // lazyload doesn't know innerWidth while loading!
+          var leftmargin = (self.$viewport.innerWidth() - activeslidewidth)/2;
+          self.$wrapper.css({
+            'margin-left': leftmargin
+          });
+        }
       }
     },
 
@@ -849,7 +940,7 @@ if ( typeof Object.create != 'function') {
           self.scaleSlides();
         }
         self.centerPosition();
-        if ( $.isFunction( self.options.afterSliding ) ) {
+        if ( $.isFunction( self.options.afterResize ) ) {
           self.options.afterResize.call(this);
         }
       }
@@ -906,6 +997,9 @@ if ( typeof Object.create != 'function') {
     slideClass      : ".slide",
     imageClass      : "",
     animationType   : "css",
+    lazyLoad        : false,
+    lazyLoadAutoInit: true,
+    lazyLoadWindow  : 1,
     scaleSlides     : true,
     maxWidth        : 800,
     maxHeight       : 500,
@@ -928,7 +1022,8 @@ if ( typeof Object.create != 'function') {
     directionClasses: false,
     afterSliding    : function() {},
     afterInit       : function() {},
-    afterResize     : function(instance) {}
+    afterResize     : function(instance) {},
+    afterLazyLoad   : function() {}
   };
 
   $.extend($.easing, {
