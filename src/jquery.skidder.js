@@ -11,6 +11,7 @@
  * 0.2.8 rewrite of CSS timing using transitionend and rAF
  * 0.2.9 lazy-loading
  * 0.2.91 preservePortrait only for portrait, not < than scale ratio
+ * 0.2.92 fixed error for two slideshows with different transitions
  */
 
 if ( typeof Object.create != 'function') {
@@ -378,7 +379,7 @@ if ( typeof Object.create != 'function') {
       } else if (self.options.transition == "fade") {
         self.$viewport.addClass('skidder-fade');
         if (self.options.cycle && self.$slides.length > 1) {
-          $(".skidder-wrapper, .skidder-slide").css("position", "absolute");
+          self.$wrapper.add(self.$slides).css("position", "absolute");
         } else if ( self.$slides.length > 1 ){
           self.$clickwrappers.find('.skidder-prev').hide(0);
         }

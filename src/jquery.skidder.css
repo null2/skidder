@@ -44,7 +44,7 @@
   position: absolute;
   width: 50%; /* reduce width if you want a clickable image area */
   height: 100%;
-  z-index: 2;
+  z-index: 4;
   cursor: pointer;
   -webkit-user-select: none;
   -moz-user-select: none;
