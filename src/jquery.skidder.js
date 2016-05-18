@@ -12,6 +12,7 @@
  * 0.2.9 lazy-loading
  * 0.2.91 preservePortrait only for portrait, not < than scale ratio
  * 0.2.92 fixed error for two slideshows with different transitions
+ * 0.2.93 fixed caption alignment problem for wider than ratio slides. TODO: center align wider than ratio images for fade transition
  */
 
 if ( typeof Object.create != 'function') {
@@ -188,7 +189,7 @@ if ( typeof Object.create != 'function') {
       } else {
         maxWidth = self.$viewport.innerWidth();
       }
-      
+
       // smallest scaling mode: slideshow height and slide height are defined by smallest image height (or maxHeight if smaller)
       if (self.options.scaleTo === "smallest") { 
         
@@ -271,19 +272,25 @@ if ( typeof Object.create != 'function') {
           
           if (!$(this).is('img')) {
             // element is imageless slide
+            // console.log('element is imageless slide');
             $(this).css({
               'width'   : maxWidth,
               'height'  : '100%',
             });
           } else if ((imagewidth / imageheight) >= self.options.scaleTo[0] / self.options.scaleTo[1]) {
             // wider than ratio: size to maxHeight, will be cropped left + right
+            // console.log('wider than ratio:');
             $(this).css({
               'width'   : 'auto',
               'height'  : maxHeight,
             });
+            $(this).closest('.skidder-slide').css({
+              'width'   : maxWidth,
+            });
 
           } else if ((imagewidth / imageheight) < self.options.scaleTo[0] / self.options.scaleTo[1] && imagewidth > imageheight) {
             // less wide than ratio but landscape: will be cropped top & bottom
+            // console.log('less wide than ratio but landscape');
             $(this).css({
               'width'   : maxWidth,
               'height'  : 'auto',
@@ -293,6 +300,7 @@ if ( typeof Object.create != 'function') {
             // portrait
             if (self.options.preservePortrait) {
               // fit
+              // console.log('portrait fit');
               $(this).css({
                 'width'   : 'auto',
                 'height'  : slideshowHeight,
@@ -304,6 +312,7 @@ if ( typeof Object.create != 'function') {
                 'width'   : (self.options.spaceSlides ? maxWidth : 'auto'),
               });
             } else {
+              // console.log('portrait cover');
               // cover
               $(this).css({
                 'width'   : maxWidth,
